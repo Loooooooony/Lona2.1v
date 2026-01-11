@@ -1,0 +1,249 @@
+{
+    "kick": {
+        "name": "طرد (Kick)",
+        "desc": "طرد عضو من السيرفر",
+        "enabled": true,
+        "aliases": [
+            "k",
+            "طرد"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "ban": {
+        "name": "حظر (Ban)",
+        "desc": "حظر عضو نهائياً",
+        "enabled": true,
+        "aliases": [
+            "b",
+            "حظر"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "mute": {
+        "name": "إسكات (Mute)",
+        "desc": "إسكات عضو لفترة",
+        "enabled": true,
+        "aliases": [
+            "m",
+            "ميوت",
+            "اسكت",
+            "تايم"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "unmute": {
+        "name": "تكلم (Unmute)",
+        "desc": "فك الإسكات",
+        "enabled": true,
+        "aliases": [
+            "unm",
+            "تكلم",
+            "تايمر"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "lock": {
+        "name": "قفل الروم (Lock)",
+        "desc": "منع الكتابة بالروم",
+        "enabled": true,
+        "aliases": [
+            "l",
+            "قفل"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "unlock": {
+        "name": "فتح الروم (Unlock)",
+        "desc": "السماح بالكتابة",
+        "enabled": true,
+        "aliases": [
+            "ul",
+            "فتح",
+            "ف"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "clear": {
+        "name": "مسح (Clear)",
+        "desc": "حذف رسائل",
+        "enabled": true,
+        "aliases": [
+            "c",
+            "مسح"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "role": {
+        "name": "إعطاء رتبة (Role)",
+        "desc": "إعطاء/إزالة رتبة",
+        "enabled": true,
+        "aliases": [
+            "r",
+            "رتبة",
+            "رو"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "nick": {
+        "name": "تغيير لقب (Nick)",
+        "desc": "تغيير اسم عضو",
+        "enabled": true,
+        "aliases": [
+            "n",
+            "لقب",
+            "خذ",
+            "ت"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "unban": {
+        "name": "فك الحظر (Unban)",
+        "desc": "إزالة الحظر عن عضو",
+        "enabled": true,
+        "aliases": [
+            "ub",
+            "فك_حظر"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "vkick": {
+        "name": "طرد صوتي (Voice Kick)",
+        "desc": "طرد العضو من الروم الصوتي",
+        "enabled": true,
+        "aliases": [
+            "vk",
+            "طرد_صوتي"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "vmute": {
+        "name": "إسكات صوتي (Voice Mute)",
+        "desc": "منع التحدث بالروم الصوتي",
+        "enabled": true,
+        "aliases": [
+            "vm",
+            "اخرس"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "vunmute": {
+        "name": "فك صوتي (Voice Unmute)",
+        "desc": "السماح بالتحدث صوتياً",
+        "enabled": true,
+        "aliases": [
+            "vum",
+            "انطق"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "move": {
+        "name": "سحب عضو (Move)",
+        "desc": "سحب عضو لروم صوتي",
+        "enabled": true,
+        "aliases": [
+            "mv",
+            "سحب",
+            "تع"
+        ],
+        "roles": [
+            "1417790128419639318"
+        ],
+        "channels": [],
+        "delete_after": 0
+    },
+    "slowmode": {
+        "name": "الوضع البطيء (Slowmode)",
+        "desc": "تحديد وقت بين الرسائل",
+        "enabled": true,
+        "aliases": [
+            "sm",
+            "بطيء"
+        ],
+        "roles": [
+            "1417790128419639318"
+        ],
+        "channels": [
+            "1417981683776487515"
+        ],
+        "delete_after": 0
+    },
+    "warn": {
+        "name": "تحذير (Warn)",
+        "desc": "إعطاء تحذير لعضو",
+        "enabled": true,
+        "aliases": [
+            "w",
+            "نذار",
+            "تحذير",
+            "تح",
+            "راك"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "warns": {
+        "name": "التحذيرات (Warnings)",
+        "desc": "عرض تحذيرات العضو",
+        "enabled": true,
+        "aliases": [
+            "ws",
+            "انذارات",
+            "ان"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "setnick": {
+        "name": "تغيير لقب (Nick)",
+        "desc": "تغيير اسم العضو",
+        "enabled": true,
+        "aliases": [
+            "n",
+            "لقب",
+            "خذ"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    },
+    "setcolor": {
+        "name": "تغيير لون (Color)",
+        "desc": "تغيير لون رتبة (Hex)",
+        "enabled": true,
+        "aliases": [
+            "color",
+            "لون"
+        ],
+        "roles": [],
+        "channels": [],
+        "delete_after": 0
+    }
+}

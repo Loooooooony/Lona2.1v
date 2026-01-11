@@ -1,0 +1,35 @@
+{
+    "roulette": {
+        "title": "💀 روليت الإقصاء الملكي",
+        "description": "اضغط على انضمام للموت..\r\nالخاسر يودع السيرفر!",
+        "color": "#990000",
+        "btn_join": "انضمام للموت 💀",
+        "btn_start": "بدء المجزرة 🔥",
+        "command_name": "رو",
+        "msg_win": ""
+    },
+    "spyfall": {
+        "title": "🕵️‍♂️ لعبة الجاسوس",
+        "description": "حاولوا تكشفون لونا!",
+        "color": "#00ffff",
+        "btn_join": "دخول",
+        "btn_start": "توزيع",
+        "command_name": "ج"
+    },
+    "codenames": {
+        "title": null,
+        "description": null,
+        "color": null,
+        "btn_join": null,
+        "btn_start": null,
+        "command_name": ""
+    },
+    "family": {
+        "title": "👨‍👩‍👧‍👦 عائلتي تربح",
+        "description": "أسرع فريق يجاوب يربح!",
+        "color": "#f1c40f",
+        "btn_join": "تسجيل",
+        "btn_start": "رن الجرس",
+        "command_name": null
+    }
+}

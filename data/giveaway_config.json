@@ -1,0 +1,18 @@
+{
+    "prize": "نيترو جيمنج شهر",
+    "winners": 2,
+    "time_val": 2,
+    "time_unit": "m",
+    "description": "ههه",
+    "color": "#00ffff",
+    "channel_id": "",
+    "image_url": "",
+    "thumbnail_url": "",
+    "ping_type": "here",
+    "req_role_id": "",
+    "blacklist_role_id": "",
+    "bypass_role_id": "",
+    "req_voice_minutes": 1,
+    "min_account_age": 30,
+    "min_server_age": 60
+}

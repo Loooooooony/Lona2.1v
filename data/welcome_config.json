@@ -1,0 +1,15 @@
+{
+    "enabled": true,
+    "guild_id": "1417050563773988959",
+    "channel_id": "1417414579641913435",
+    "message": "Welcome {user}!\r\nyou are {count} member",
+    "avatar_x": "574",
+    "avatar_y": "197",
+    "avatar_size": "165",
+    "text_x": "520",
+    "text_y": "144",
+    "font_size": "43",
+    "text_color": "#0000ff",
+    "image_text": "Welcome {username}",
+    "avatar_shape": "round"
+}

@@ -1,0 +1,24 @@
+{
+    "log_channel_id": "1457815063917363220",
+    "events": {
+        "msg_delete": true,
+        "msg_edit": true,
+        "member_join": true,
+        "member_leave": true,
+        "member_update": true,
+        "user_update": true,
+        "voice_update": true,
+        "emoji_update": true,
+        "server_update": true,
+        "invite_update": true,
+        "ban_add": true,
+        "ban_remove": true,
+        "channel_create": true,
+        "channel_delete": true,
+        "role_create": true,
+        "role_delete": true,
+        "msg_bulk": true,
+        "channel_update": true,
+        "role_update": true
+    }
+}
