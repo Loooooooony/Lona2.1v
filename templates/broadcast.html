@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المذيع الآلي 📣</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="mobile-style.css" rel="stylesheet">
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+    
+    <div class="main-content">
+<style>
+:root {
+            --bg-dark: #050507;
+            --glass-bg: rgba(20, 20, 23, 0.7);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+            --accent: #ffb7c5;
+            --neon-cyan: #00f3ff;
+            --neon-purple: #bc13fe;
+            --neon-red: #ff4d4d;
+            --text-main: #ffffff;
+            --text-muted: #8a8a93;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            --discord-bg: #36393f;
+            --discord-card: #2f3136;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Cairo', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.05) 0%, transparent 25%);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        /* --- Sidebar Style --- */
+        .sidebar {
+            width: var(--sidebar-width); height: 100vh;
+            background: rgba(12, 12, 14, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: var(--glass-border);
+            position: fixed; top: 0; right: 0;
+            padding: 20px 15px; z-index: 1000;
+            display: flex; flex-direction: column;
+            overflow-y: auto; overflow-x: hidden;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        /* --- Collapsed Mode --- */
+        body.collapsed-mode .sidebar { width: var(--sidebar-collapsed-width); padding: 20px 10px; }
+        body.collapsed-mode .main-content { margin-right: var(--sidebar-collapsed-width); }
+        
+        body.collapsed-mode .brand-text, 
+        body.collapsed-mode .nav-link span,
+        body.collapsed-mode .nav-header,
+        body.collapsed-mode .brand-box small { display: none !important; }
+        
+        body.collapsed-mode .brand-box { padding: 10px 5px; background: transparent; border: none; }
+        body.collapsed-mode .nav-link { justify-content: center; padding: 12px; }
+        body.collapsed-mode .nav-link i { margin: 0; font-size: 1.3rem; }
+        
+        .d-collapsed-block { display: none; }
+        body.collapsed-mode .d-collapsed-block { display: block; margin: 0 auto; }
+
+        .brand-box {
+            padding: 15px; background: linear-gradient(135deg, rgba(255,183,197,0.1), transparent);
+            border-radius: 15px; border: var(--glass-border);
+            text-align: center; margin-bottom: 20px; white-space: nowrap;
+        }
+        .brand-text { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin: 0; }
+
+        .nav-header {
+            font-size: 0.75rem; color: #666; margin: 15px 10px 5px; 
+            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; white-space: nowrap;
+        }
+
+        .nav-link {
+            display: flex; align-items: center; padding: 10px 15px;
+            color: var(--text-muted); text-decoration: none;
+            border-radius: 10px; margin-bottom: 4px; font-size: 0.9rem;
+            font-weight: 600; transition: all 0.2s;
+            border-right: 3px solid transparent; cursor: pointer; white-space: nowrap;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main); border-right-color: var(--accent);
+            transform: translateX(-5px);
+        }
+        body.collapsed-mode .nav-link:hover, body.collapsed-mode .nav-link.active { transform: none; background: rgba(255, 255, 255, 0.1); }
+        .nav-link i { width: 25px; font-size: 1rem; text-align: center; margin-left: 10px; }
+        .nav-link.locked { color: var(--neon-red); opacity: 0.8; }
+
+        /* --- Main Content --- */
+        .main-content { margin-right: var(--sidebar-width); padding: 30px; transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .sidebar-toggler {
+            background: transparent; border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; border-radius: 8px; width: 40px; height: 40px;
+            transition: 0.2s; cursor: pointer; display: none; margin-left: 15px;
+        }
+        .sidebar-toggler:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
+
+        /* --- Broadcast Specific Styles --- */
+        .glass-panel {
+            background: var(--glass-bg); border: var(--glass-border);
+            border-radius: 20px; padding: 25px; height: 100%;
+            position: relative; overflow: hidden;
+        }
+
+        .section-header {
+            cursor: pointer; background: rgba(255,255,255,0.05);
+            padding: 12px 15px; border-radius: 12px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px solid rgba(255,255,255,0.1); transition: 0.2s;
+        }
+        .section-header:hover { border-color: var(--accent); background: rgba(255,255,255,0.08); }
+        
+        .section-content { 
+            display: none; padding: 15px; 
+            border-right: 2px solid var(--accent); 
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px; margin-bottom: 20px; 
+            animation: slideDown 0.3s ease-out; 
+        }
+        .section-content.show { display: block; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-control, .form-select {
+            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff; border-radius: 10px; padding: 10px; margin-bottom: 10px;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 0, 0, 0.5); border-color: var(--accent);
+            color: #fff; box-shadow: 0 0 10px rgba(255, 183, 197, 0.1);
+        }
+
+        .btn-upload {
+            background: linear-gradient(45deg, var(--accent), #ff8fa3);
+            color: #000; border: none; font-weight: 800;
+            padding: 12px; border-radius: 12px; width: 100%;
+            transition: 0.3s; margin-top: 20px;
+        }
+        .btn-upload:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(255, 183, 197, 0.3); }
+
+        .file-btn {
+            border: 1px dashed rgba(255,255,255,0.3); padding: 8px;
+            text-align: center; color: #aaa; cursor: pointer;
+            border-radius: 8px; display: block; transition: 0.2s;
+        }
+        .file-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.05); }
+        input[type=file] { display: none; }
+
+        /* Preview Area */
+        .discord-msg {
+            background: var(--discord-bg); padding: 20px; border-radius: 12px;
+            border: 1px solid #222; display: flex; gap: 15px; font-family: 'Whitney', sans-serif;
+        }
+        .bot-avatar { 
+            width: 45px; height: 45px; border-radius: 50%; 
+            background-size: cover; flex-shrink: 0; background-color: #555; 
+        }
+        .msg-body { width: 100%; }
+        .sender-name { color: #fff; font-weight: bold; display: flex; align-items: center; gap: 5px; font-size: 1rem; }
+        .bot-tag { 
+            background: #5865f2; color: white; font-size: 0.65rem; 
+            padding: 2px 5px; border-radius: 3px; margin-right: 5px; 
+        }
+        
+        .embed-card {
+            background: var(--discord-card); border-left: 4px solid var(--accent);
+            padding: 15px; border-radius: 5px; margin-top: 5px; max-width: 100%;
+        }
+        .embed-title { font-weight: bold; color: #fff; margin-bottom: 8px; }
+        .embed-desc { color: #dcddde; font-size: 0.9rem; white-space: pre-wrap; }
+        .embed-img { width: 100%; border-radius: 5px; margin-top: 10px; display: none; }
+        .embed-thumb { float: left; max-width: 60px; max-height: 60px; border-radius: 5px; margin-right: 10px; display: none; }
+        .embed-footer { color: #72767d; font-size: 0.75rem; margin-top: 8px; }
+
+        .preview-buttons { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .discord-btn { 
+            padding: 6px 14px; border-radius: 3px; font-size: 0.85rem; 
+            font-weight: 500; color: white; border: none; display: flex; 
+            align-items: center; gap: 5px; background-color: #5865f2; 
+        }
+        .discord-btn.btn-secondary { background-color: #4f545c; }
+        .discord-btn.btn-success { background-color: #3ba55c; }
+        .discord-btn.btn-danger { background-color: #ed4245; }
+        .discord-btn.btn-link { background-color: #4f545c; position: relative; } 
+        .discord-btn.btn-link::after { content: "↗"; font-size: 10px; margin-right: 5px; }
+
+        @media (min-width: 993px) {
+            .sidebar-toggler { display: inline-block; }
+            .mobile-toggler { display: none; }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(100%); width: 280px !important; }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { margin-right: 0 !important; padding: 20px; }
+            
+            body.collapsed-mode .brand-text, 
+            body.collapsed-mode .nav-link span,
+            body.collapsed-mode .nav-header { display: block !important; }
+            body.collapsed-mode .nav-link { justify-content: flex-start; }
+            
+            .row { flex-direction: column-reverse; } /* المعاينة تصير فوق بالموبايل */
+        }
+</style>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-dark mobile-toggler me-3 shadow-sm" onclick="toggleMobileSidebar()" style="border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-bars"></i></button>
+                <button class="sidebar-toggler" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                
+                <div>
+                    <h3 class="fw-bold m-0 text-white">المذيع الآلي <span style="color: var(--accent);">📣</span></h3>
+                    <p class="text-muted m-0 small">إرسال رسائل احترافية (Embeds) لكل السيرفرات أو قنوات محددة.</p>
+                </div>
+            </div>
+        </div>
+
+        {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+        {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+        <div class="row g-4">
+            
+            <div class="col-lg-7">
+                <div class="glass-panel">
+                    <form method="POST" enctype="multipart/form-data">
+                        
+                        <div class="section-header" onclick="toggleSection('id-sec')">
+                            <strong><i class="fas fa-id-badge"></i> الهوية والقناة</strong> <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="id-sec" class="section-content show">
+                            <input type="number" name="channel_id" class="form-control" placeholder="ID القناة (مطلوب للإرسال)" required>
+                            <div class="row g-2">
+                                <div class="col-7"><input type="text" name="sender_name" id="in-name" class="form-control" placeholder="اسم المرسل (Webhook)"></div>
+                                <div class="col-5">
+                                    <label class="file-btn">
+                                        <i class="fas fa-user-circle"></i> صورة المرسل
+                                        <input type="file" name="sender_avatar_file" id="in-avatar-file" accept="image/*">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-header" onclick="toggleSection('content-sec')">
+                            <strong><i class="fas fa-pen-nib"></i> محتوى الرسالة</strong> <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="content-sec" class="section-content show">
+                            <input type="text" name="title" id="in-title" class="form-control" placeholder="العنوان الرئيسي (Title)">
+                            <textarea name="description" id="in-desc" class="form-control" rows="4" placeholder="الوصف والمحتوى... (يدعم الايموجي والروابط)"></textarea>
+                            
+                            <div class="row g-2 mt-2">
+                                <div class="col-4"><input type="color" name="color" id="in-color" class="form-control form-control-color w-100" value="#ffb7c5" title="لون الشريط الجانبي"></div>
+                                <div class="col-4">
+                                    <label class="file-btn"><i class="fas fa-image"></i> صورة كبيرة
+                                        <input type="file" name="image_file" id="in-image-file" accept="image/*">
+                                    </label>
+                                </div>
+                                <div class="col-4">
+                                    <label class="file-btn"><i class="fas fa-compress"></i> صورة مصغرة
+                                        <input type="file" name="thumbnail_file" id="in-thumb-file" accept="image/*">
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="text" name="footer" id="in-footer" class="form-control mt-2" placeholder="تذييل (Footer Text)">
+                        </div>
+
+                        <div class="section-header" onclick="toggleSection('btns-sec')">
+                            <strong><i class="fas fa-mouse-pointer"></i> الأزرار التفاعلية</strong> <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div id="btns-sec" class="section-content">
+                            {% for i in range(1, 6) %}
+                            <div class="border-bottom border-secondary pb-2 mb-2">
+                                <div class="row g-1">
+                                    <div class="col-4"><input type="text" name="btn_label_{{i}}" class="form-control form-control-sm btn-label-in" placeholder="اسم الزر {{i}}"></div>
+                                    <div class="col-4"><input type="text" name="btn_emoji_{{i}}" class="form-control form-control-sm" placeholder="ايموجي"></div>
+                                    <div class="col-4">
+                                        <select name="btn_style_{{i}}" class="form-select form-select-sm btn-style-in">
+                                            <option value="primary">أزرق 🔵</option>
+                                            <option value="secondary">رصاصي 🔘</option>
+                                            <option value="success">أخضر 🟢</option>
+                                            <option value="danger">أحمر 🔴</option>
+                                            <option value="link">رابط 🔗</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-4">
+                                        <select name="btn_action_{{i}}" class="form-select form-select-sm">
+                                            <option value="link">رابط (Link)</option>
+                                            <option value="role">رتبة (Role)</option>
+                                            <option value="reply">رد (Reply)</option>
+                                            <option value="delete">حذف (Delete)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-8"><input type="text" name="btn_value_{{i}}" class="form-control form-control-sm" placeholder="القيمة (URL أو RoleID)"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" class="btn-upload"><i class="fas fa-paper-plane"></i> إرسال الرسالة</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="glass-panel" style="position: sticky; top: 20px;">
+                    <h5 class="text-white mb-3 text-center"><i class="fas fa-eye"></i> معاينة مباشرة</h5>
+                    <div class="discord-msg">
+                        <div class="bot-avatar" id="prev-avatar"></div>
+                        <div class="msg-body">
+                            <div class="sender-name">
+                                  <span id="prev-name">Lona Broadcast</span> 
+                                <span class="bot-tag">BOT</span>
+                            </div>
+                            <div class="embed-card" id="prev-card">
+                                <img src="" class="embed-thumb" id="prev-thumb">
+                                <div class="embed-title" id="prev-title">عنوان الرسالة</div>
+                                <div class="embed-desc" id="prev-desc">محتوى الرسالة سيظهر هنا...</div>
+                                <img src="" class="embed-img" id="prev-image">
+                                <div class="embed-footer" id="prev-footer"></div>
+                            </div>
+                            <div class="preview-buttons" id="prev-buttons"></div>
+                        </div>
+                    </div>
+                    <p class="text-muted text-center mt-3 small">هذا مجرد عرض تقريبي للشكل النهائي.</p>
+                </div>
+            </div>
+
+        </div>
+    
+<script>
+// دالة الطي
+        function toggleSidebar() {
+            document.body.classList.toggle('collapsed-mode');
+            if(document.body.classList.contains('collapsed-mode')) {
+                localStorage.setItem('sidebarState', 'collapsed');
+            } else {
+                localStorage.setItem('sidebarState', 'expanded');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if(localStorage.getItem('sidebarState') === 'collapsed') {
+                document.body.classList.add('collapsed-mode');
+            }
+        });
+
+        // Toggle Sections
+        function toggleSection(id) {
+            var el = document.getElementById(id);
+            el.classList.toggle('show');
+        }
+
+        // Live Preview Logic
+        function linkText(inputId, prevId, def) {
+            var inp = document.getElementById(inputId);
+            var prev = document.getElementById(prevId);
+            inp.addEventListener('input', () => { prev.innerText = inp.value || def; });
+        }
+        linkText('in-name', 'prev-name', 'Lona Broadcast');
+        linkText('in-title', 'prev-title', 'عنوان الرسالة');
+        linkText('in-desc', 'prev-desc', 'محتوى الرسالة سيظهر هنا...');
+        linkText('in-footer', 'prev-footer', '');
+        
+        document.getElementById('in-color').addEventListener('input', (e) => {
+            document.getElementById('prev-card').style.borderLeftColor = e.target.value;
+        });
+
+        function linkFile(inputId, prevImgId, isBg=false) {
+            document.getElementById(inputId).addEventListener('change', function(e) {
+                var file = e.target.files[0];
+                var prev = document.getElementById(prevImgId);
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        if(isBg) prev.style.backgroundImage = `url('${e.target.result}')`;
+                        else { prev.src = e.target.result; prev.style.display = 'block'; }
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    if(!isBg) prev.style.display = 'none';
+                }
+            });
+        }
+        linkFile('in-image-file', 'prev-image');
+        linkFile('in-thumb-file', 'prev-thumb');
+        linkFile('in-avatar-file', 'prev-avatar', true);
+
+        // Buttons Preview
+        var btnLabels = document.querySelectorAll('.btn-label-in');
+        var btnStyles = document.querySelectorAll('.btn-style-in');
+        var prevBtns = document.getElementById('prev-buttons');
+
+        function updateBtns() {
+            prevBtns.innerHTML = '';
+            btnLabels.forEach((inp, i) => {
+                if(inp.value) {
+                    var style = btnStyles[i].value;
+                    var btn = document.createElement('div');
+                    btn.className = `discord-btn btn-${style}`;
+                    btn.innerText = inp.value;
+                    prevBtns.appendChild(btn);
+                }
+            });
+        }
+        btnLabels.forEach(b => b.addEventListener('input', updateBtns));
+        btnStyles.forEach(s => s.addEventListener('change', updateBtns));
+</script>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="mobile-script.js"></script>
+</body>
+</html>

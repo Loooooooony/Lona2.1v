@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Lona Live Chat 💬</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="mobile-style.css" rel="stylesheet">
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <div class="main-content">
+<style>
+
+        :root {
+            --bg-dark: #050507;
+            --glass-bg: rgba(20, 20, 23, 0.7);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+            --accent: #ffb7c5;
+            --neon-cyan: #00f3ff;
+            --text-main: #ffffff;
+            --text-muted: #8a8a93;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            
+            /* Chat Colors */
+            --msg-user: rgba(255, 255, 255, 0.05);
+            --msg-bot: rgba(255, 183, 197, 0.1);
+            --highlight-reply: rgba(255, 215, 0, 0.15);
+            --border-highlight: #ffd700;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Cairo', sans-serif;
+            overflow: hidden; /* مهم للشات */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 183, 197, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.05) 0%, transparent 25%);
+            height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        /* --- Sidebar Style (نفس الموحد) --- */
+        .sidebar {
+            width: var(--sidebar-width); height: 100vh;
+            background: rgba(12, 12, 14, 0.95);
+            backdrop-filter: blur(20px);
+            border-left: var(--glass-border);
+            position: fixed; top: 0; right: 0;
+            padding: 20px 15px; z-index: 2000;
+            display: flex; flex-direction: column;
+            overflow-y: auto; overflow-x: hidden;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+        /* Sidebar Footer */
+        .sidebar-footer {
+            margin-top: auto; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;
+        }
+        .control-btn {
+            background: rgba(255,255,255,0.05); border: none; color: #aaa;
+            padding: 8px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+        }
+        .control-btn:hover { background: var(--accent); color: #000; }
+        .btn-danger-custom:hover { background: #ff4d4d !important; color: #fff !important; }
+
+        /* Collapsed Mode */
+        body.collapsed-mode .sidebar { width: var(--sidebar-collapsed-width); padding: 20px 10px; }
+        body.collapsed-mode .main-content { margin-right: var(--sidebar-collapsed-width); }
+        body.collapsed-mode .brand-text, body.collapsed-mode .nav-link span, body.collapsed-mode .nav-header, body.collapsed-mode .brand-box small { display: none !important; }
+        body.collapsed-mode .brand-box { padding: 10px 5px; background: transparent; border: none; }
+        body.collapsed-mode .nav-link { justify-content: center; padding: 12px; }
+        body.collapsed-mode .nav-link i { margin: 0; font-size: 1.3rem; }
+        body.collapsed-mode .sidebar-footer { display: flex; flex-direction: column; gap: 10px; }
+        .d-collapsed-block { display: none; }
+        body.collapsed-mode .d-collapsed-block { display: block; margin: 0 auto; }
+
+        .brand-box {
+            padding: 15px; background: linear-gradient(135deg, rgba(255,183,197,0.1), transparent);
+            border-radius: 15px; border: var(--glass-border);
+            text-align: center; margin-bottom: 20px; white-space: nowrap;
+        }
+        .brand-text { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin: 0; }
+        .nav-header { font-size: 0.75rem; color: #666; margin: 15px 10px 5px; font-weight: 800; }
+        .nav-link {
+            display: flex; align-items: center; padding: 10px 15px;
+            color: var(--text-muted); text-decoration: none;
+            border-radius: 10px; margin-bottom: 4px; font-size: 0.9rem; font-weight: 600;
+            border-right: 3px solid transparent; transition: 0.2s;
+        }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.05); color: var(--text-main); border-right-color: var(--accent); }
+        .nav-link.locked { color: #ff4d4d; opacity: 0.8; }
+
+        /* --- Main Content (Split Layout) --- */
+        .main-content {
+            margin-right: var(--sidebar-width); 
+            height: 100vh;
+            display: flex;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Server List Panel */
+        .servers-panel {
+            width: 300px;
+            background: rgba(15, 15, 18, 0.6);
+            border-left: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+        
+        .panel-header {
+            padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-weight: bold; color: var(--text-main); display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .server-list-container { flex: 1; overflow-y: auto; padding: 10px; }
+        .server-list-container::-webkit-scrollbar { width: 4px; }
+        .server-list-container::-webkit-scrollbar-thumb { background: #333; }
+
+        .guild-item { margin-bottom: 15px; }
+        .guild-name { font-size: 0.85rem; color: #aaa; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; font-weight: bold; }
+        .guild-icon { width: 20px; height: 20px; border-radius: 50%; }
+
+        .channel-item {
+            padding: 8px 12px; border-radius: 6px; cursor: pointer;
+            color: #ccc; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+            margin-bottom: 2px; transition: 0.2s;
+        }
+        .channel-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .channel-item.active { background: rgba(255, 183, 197, 0.1); color: var(--accent); }
+        .channel-item i { font-size: 0.8rem; opacity: 0.5; }
+
+        /* Chat Area */
+        .chat-wrapper { flex: 1; display: flex; flex-direction: column; position: relative; background: rgba(0,0,0,0.2); }
+
+        .chat-header {
+            padding: 15px; background: rgba(20, 20, 23, 0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .chat-area {
+            flex: 1; overflow-y: auto; padding: 20px;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .chat-area::-webkit-scrollbar { width: 6px; }
+        .chat-area::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+
+        /* Messages */
+        .msg-row { display: flex; gap: 10px; max-width: 85%; animation: fadeIn 0.2s; }
+        .msg-row.bot { align-self: flex-end; flex-direction: row-reverse; }
+        
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+        
+        .msg-bubble {
+            background: var(--msg-user); padding: 10px 15px;
+            border-radius: 15px; border-top-right-radius: 2px;
+            font-size: 0.95rem; line-height: 1.5; position: relative;
+            color: #ddd; word-wrap: break-word;
+        }
+        .msg-row.bot .msg-bubble {
+            background: var(--msg-bot); border-radius: 15px; border-top-left-radius: 2px;
+            color: #fff; border: 1px solid rgba(255, 183, 197, 0.1);
+        }
+
+        .reply-to-me .msg-bubble {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(0,0,0,0));
+            border: 1px solid var(--border-highlight);
+        }
+
+        .emoji-render { width: 22px; height: 22px; vertical-align: middle; }
+        .msg-image { max-width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .msg-actions { opacity: 0; transition: 0.2s; margin-top: 5px; display: flex; gap: 5px; }
+        .msg-row:hover .msg-actions { opacity: 1; }
+        .action-btn { 
+            width: 25px; height: 25px; border-radius: 50%; border: none; background: rgba(255,255,255,0.1); 
+            color: #ccc; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .action-btn:hover { background: var(--accent); color: #000; }
+
+        /* Input */
+        .input-area { padding: 15px; background: rgba(20, 20, 23, 0.9); border-top: 1px solid rgba(255,255,255,0.05); }
+        
+        .input-box {
+            display: flex; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px; 
+            border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); align-items: center;
+        }
+        .input-box:focus-within { border-color: var(--accent); box-shadow: 0 0 10px rgba(255, 183, 197, 0.1); }
+        
+        .chat-input { flex: 1; background: transparent; border: none; color: #fff; outline: none; padding: 5px 10px; }
+        .btn-icon { background: none; border: none; color: #888; font-size: 1.2rem; cursor: pointer; padding: 0 10px; }
+        .btn-icon:hover { color: #fff; }
+
+        .reply-bar {
+            background: rgba(255, 183, 197, 0.1); color: var(--accent); padding: 5px 15px;
+            border-radius: 10px; margin-bottom: 8px; display: none;
+            justify-content: space-between; align-items: center;
+        }
+
+        /* Emoji Overlay */
+        .emoji-overlay {
+            position: absolute; bottom: 80px; left: 20px; width: 300px; height: 300px;
+            background: rgba(20, 20, 23, 0.95); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; display: none; flex-direction: column; z-index: 2000;
+            backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .emoji-grid { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 5px; }
+        .emoji-item { padding: 5px; border-radius: 5px; cursor: pointer; text-align: center; }
+        .emoji-item:hover { background: rgba(255,255,255,0.1); }
+        .emoji-item img { width: 28px; height: 28px; }
+
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(100%); width: 280px !important; }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { margin-right: 0 !important; }
+            .servers-panel { position: absolute; height: 100%; z-index: 100; transform: translateX(100%); transition: 0.3s; right: 0; }
+            .servers-panel.active { transform: translateX(0); }
+            
+            body.collapsed-mode .brand-text, body.collapsed-mode .nav-header { display: block !important; }
+            body.collapsed-mode .nav-link { justify-content: flex-start; }
+        }
+    
+</style>
+
+        
+        <div class="servers-panel" id="serversPanel">
+            <div class="panel-header">
+                <span><i class="fas fa-globe me-2"></i> السيرفرات</span>
+                <button class="btn btn-sm text-white d-lg-none" onclick="document.getElementById('serversPanel').classList.remove('active')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="server-list-container" id="serverList">
+                <div class="text-center mt-5 text-muted small">
+                    <div class="spinner-border spinner-border-sm mb-2"></div><br>
+                    جارِ الاتصال...
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-wrapper">
+            <div class="chat-header">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-dark d-lg-none" onclick="document.getElementById('sidebar').classList.toggle('active')"><i class="fas fa-bars"></i></button>
+                    <button class="btn btn-dark d-lg-none" onclick="document.getElementById('serversPanel').classList.toggle('active')"><i class="fas fa-list"></i></button>
+                    <button class="sidebar-toggler d-none d-lg-block btn btn-outline-light border-0" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    
+                    <div>
+                        <div class="fw-bold text-white" id="currentChannelName"># اختر قناة</div>
+                        <div class="d-flex align-items-center gap-2 small">
+                            <span id="statusDot" style="width:8px; height:8px; background:#555; border-radius:50%;"></span>
+                            <span class="text-muted" id="statusText">غير متصل</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="/" class="btn btn-outline-light btn-sm rounded-pill px-3">خروج</a>
+            </div>
+
+            <div class="chat-area" id="chatArea">
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted" style="opacity:0.3;">
+                    <i class="fas fa-satellite-dish fa-4x mb-3"></i>
+                    <p>بانتظار الإشارة من السيرفرات...</p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div id="replyBar" class="reply-bar">
+                    <span class="small"><i class="fas fa-reply me-2"></i> الرد على: <strong id="replyTarget">...</strong></span>
+                    <button class="btn-icon" style="font-size:1rem;" onclick="cancelReply()"><i class="fas fa-times"></i></button>
+                </div>
+
+                <div id="emojiPicker" class="emoji-overlay">
+                    <div class="p-2 border-bottom border-secondary d-flex justify-content-between">
+                        <small class="text-white">ايموجي السيرفر</small>
+                        <button class="btn-close btn-close-white" onclick="toggleEmoji()"></button>
+                    </div>
+                    <div class="emoji-grid" id="emojiGrid"></div>
+                </div>
+
+                <div class="input-box">
+                    <button class="btn-icon" onclick="toggleEmoji()"><i class="far fa-smile"></i></button>
+                    <input type="text" id="msgInput" class="chat-input" placeholder="اكتبي رسالتك هنا..." autocomplete="off" onkeypress="handleEnter(event)">
+                    <button class="btn-icon text-accent" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    
+    <input type="hidden" id="channelId">
+
+<script>
+var currentReplyId = null;
+        var pollingInterval = null;
+        var myBotId = null; 
+        var lastMsgId = null;
+
+        // --- Sidebar Logic ---
+        function toggleSidebar() {
+            document.body.classList.toggle('collapsed-mode');
+            localStorage.setItem('sidebarState', document.body.classList.contains('collapsed-mode') ? 'collapsed' : 'expanded');
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if(localStorage.getItem('sidebarState') === 'collapsed') document.body.classList.add('collapsed-mode');
+        });
+
+        // --- Chat Logic ---
+        window.onload = async function() {
+            try {
+                var res = await fetch('/api/get_sidebar');
+                var data = await res.json();
+                renderServers(data.guilds);
+                
+                var savedId = localStorage.getItem('lona_channel_id');
+                if(savedId) selectChannel(savedId, localStorage.getItem('lona_channel_name') || 'قناة سابقة');
+            } catch(e) { console.error(e); }
+        };
+
+        function renderServers(guilds) {
+            var list = document.getElementById('serverList');
+            list.innerHTML = "";
+            guilds.forEach(guild => {
+                var div = document.createElement('div');
+                div.className = 'guild-item';
+                var channelsHtml = "";
+                guild.channels.forEach(ch => {
+                    channelsHtml +=`<div class="channel-item" onclick="selectChannel('${ch.id}', '${ch.name}')"><i class="fas fa-hashtag"></i> ${ch.name}</div>`;
+                });
+                div.innerHTML = `
+                    <div class="guild-name">${guild.icon ? `<img src="${guild.icon}" class="guild-icon">` : '<i class="fas fa-server"></i>'} ${guild.name}</div>
+                    <div style="padding-right: 10px;">${channelsHtml}</div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function selectChannel(id, name) {
+            document.getElementById('channelId').value = id;
+            document.getElementById('currentChannelName').innerText = "# " + name;
+            document.getElementById('statusDot').style.background = "#ffc107";
+            document.getElementById('statusText').innerText = "جار الاتصال...";
+            
+            localStorage.setItem('lona_channel_id', id);
+            localStorage.setItem('lona_channel_name', name);
+            
+            // Mobile: Close panel
+            document.getElementById('serversPanel').classList.remove('active');
+            
+            startChat();
+        }
+
+        function startChat() {
+            loadMessages();
+            if(pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(loadMessages, 3000);
+        }
+
+        async function loadMessages() {
+            var cid = document.getElementById('channelId').value;
+            try {
+                var res = await fetch(`/api/get_messages?channel_id=${cid}`);
+                var data = await res.json();
+                
+                if(data.error) { 
+                    document.getElementById('statusDot').style.background = "#ff4d4d"; 
+                    document.getElementById('statusText').innerText = "خطأ";
+                    return; 
+                }
+                
+                document.getElementById('statusDot').style.background = "#00e676";
+                document.getElementById('statusText').innerText = "متصل";
+                myBotId = data.bot_id;
+
+                if(data.messages.length > 0) {
+                    var newest = data.messages[data.messages.length-1].id;
+                    if(newest === lastMsgId) return;
+                    lastMsgId = newest;
+                }
+                renderMessages(data.messages);
+            } catch(e) { 
+                document.getElementById('statusDot').style.background = "#ff4d4d"; 
+                document.getElementById('statusText').innerText = "انقطع";
+            }
+        }
+
+        function renderMessages(msgs) {
+            var area = document.getElementById('chatArea');
+            var isBottom = area.scrollHeight - area.scrollTop <= area.clientHeight + 200;
+            area.innerHTML = "";
+
+            if(msgs.length === 0) {
+                area.innerHTML = '<div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted"><i class="fas fa-ghost fa-3x mb-3"></i><p>لا توجد رسائل...</p></div>';
+                return;
+            }
+
+            msgs.forEach(msg => {
+                var isBot = msg.is_bot;
+                var highlightClass = (msg.reply_to && msg.reply_to.author_id === myBotId) ? "reply-to-me" : "";
+                
+                var content = msg.content.replace(/<(a?):(\w+):(\d+)>/g, (m, a, n, i) => 
+                    `<img src="https://cdn.discordapp.com/emojis/${i}.${a?'gif':'png'}" class="emoji-render" title="${n}">`);
+
+                var attachHtml = "";
+                msg.attachments.forEach(url => attachHtml += `<img src="${url}" class="msg-image" onclick="window.open('${url}')">`);
+
+                var replyHtml = msg.reply_to ? `<div class="reply-preview"><i class="fas fa-share fa-flip-vertical"></i> <strong>${msg.reply_to.author}</strong>: ${msg.reply_to.content}</div>` : "";
+
+                area.innerHTML += `
+                <div class="msg-row ${isBot ? 'bot' : ''} ${highlightClass}">
+                    ${!isBot ? `<img src="${msg.avatar}" class="avatar">` : ''}
+                    <div class="msg-content">
+                        <div class="d-flex justify-content-between text-muted small px-2 mb-1">
+                            <span>${msg.author}</span>
+                            <span style="font-size:0.75rem">${msg.timestamp}</span>
+                        </div>
+                        <div class="msg-bubble">
+                            ${replyHtml}
+                            <span>${content}</span>
+                            ${attachHtml}
+                        </div>
+                        <div class="msg-actions ${isBot ? 'justify-content-end' : ''}">
+                            <button class="action-btn" onclick="setReply('${msg.id}', '${msg.author}')"><i class="fas fa-reply"></i></button>
+                            <button class="action-btn" onclick="mentionUser('${msg.author_id}')">@</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            if(isBottom) area.scrollTop = area.scrollHeight;
+        }
+
+        async function sendMessage() {
+            var cid = document.getElementById('channelId').value;
+            var input = document.getElementById('msgInput');
+            var txt = input.value.trim();
+            if(!txt) return;
+
+            input.value = "";
+            var replyTemp = currentReplyId;
+            cancelReply();
+            document.getElementById('emojiPicker').style.display = 'none';
+
+            await fetch('/api/send_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ channel_id: cid, content: txt, reply_to: replyTemp })
+            });
+            lastMsgId = null; loadMessages();
+        }
+
+        function handleEnter(e) { if(e.key === 'Enter') sendMessage(); }
+        function setReply(id, name) { currentReplyId = id; document.getElementById('replyTarget').innerText = name; document.getElementById('replyBar').style.display = 'flex'; document.getElementById('msgInput').focus(); }
+        function cancelReply() { currentReplyId = null; document.getElementById('replyBar').style.display = 'none'; }
+        function mentionUser(id) { var i = document.getElementById('msgInput'); i.value += `<@${id}> `; i.focus(); }
+
+        async function toggleEmoji() {
+            var p = document.getElementById('emojiPicker');
+            var g = document.getElementById('emojiGrid');
+            if(p.style.display === 'flex') { p.style.display = 'none'; } 
+            else {
+                p.style.display = 'flex';
+                if(g.children.length === 0) {
+                    try {
+                        var res = await fetch('/api/get_server_emojis');
+                        var data = await res.json();
+                        g.innerHTML = "";
+                        data.emojis.forEach(e => {
+                            var d = document.createElement('div'); d.className = 'emoji-item';
+                            d.innerHTML = `<img src="${e.url}">`; d.onclick = () => { document.getElementById('msgInput').value += e.code + " "; };
+                            g.appendChild(d);
+                        });
+                    } catch(e) {}
+                }
+            }
+        }
+    
+</script>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="mobile-script.js"></script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+/* تحسينات الجوال الشاملة - Lona Panel (نسخة محسنة وغير مدمرة) */
+
+@media (max-width: 992px) {
+    /* القائمة الجانبية */
+    .sidebar { 
+        transform: translateX(100%); 
+        width: 280px !important; 
+        box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+        transition: transform 0.3s ease-in-out !important;
+        visibility: visible !important;
+    }
+    .sidebar.active { transform: translateX(0) !important; }
+    
+    /* المحتوى الرئيسي */
+    .main-content { 
+        margin-right: 0 !important; 
+        padding: 15px !important; 
+    }
+    
+    /* Overlay */
+    .sidebar-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+        z-index: 999; display: none;
+    }
+    .sidebar-overlay.active { display: block; }
+
+    /* تحسين البطاقات */
+    .hero-card { 
+        flex-direction: column !important; 
+        text-align: center !important; 
+        gap: 20px !important; 
+        padding: 25px 15px !important;
+    }
+    .hero-card h1 { font-size: 1.8rem !important; }
+    
+    /* الإحصائيات */
+    .row.g-4 > div { width: 50% !important; }
+    .stat-chip { padding: 15px !important; gap: 10px !important; }
+    .chip-info h3 { font-size: 1.2rem !important; }
+}
+
+@media (max-width: 576px) {
+    .row.g-4 > div { width: 100% !important; }
+    .hero-card { padding: 20px 10px !important; }
+    h1, .h1 { font-size: 1.5rem !important; }
+}
+
+/* التحكم في الأزرار */
+@media (max-width: 992px) {
+    .mobile-toggler { display: inline-block !important; }
+    .sidebar-toggler { display: none !important; }
+}
+@media (min-width: 993px) {
+    .mobile-toggler { display: none !important; }
+    .sidebar-toggler { display: inline-block !important; }
+}
+
+/* منع التمرير الأفقي */
+body { overflow-x: hidden; width: 100%; }
