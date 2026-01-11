@@ -1,4 +1,4 @@
-from quart import Quart, render_template, request, redirect, url_for, send_file, session
+from quart import Quart, render_template, request, redirect, url_for, send_file, session, jsonify
 import discord
 import os
 import sys
@@ -8,6 +8,7 @@ import io
 import re
 import datetime
 from utils.data_manager import get_guild_file, check_guild_password, get_guild_asset
+from database import db
 
 app = Quart(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -142,6 +143,76 @@ async def edit_file(file_key):
         content = "# لا يمكن القراءة"
     
     return await render_template('editor.html', file_name=display_name, file_key=file_key, content=content)
+
+# =================================================================================================
+#  🎟️ TICKET SYSTEM ROUTES
+# =================================================================================================
+
+@app.route('/dashboard/<int:guild_id>/tickets', methods=['GET', 'POST'])
+async def tickets_dashboard(guild_id):
+    if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
+    guild = bot.get_guild(guild_id) if bot else None
+
+    if request.method == 'POST':
+        form = await request.form
+        # Update Config
+        if 'update_config' in form:
+            await db.execute("""
+                INSERT INTO ticket_configs (guild_id, support_role_id, admin_role_id, category_id, log_channel_id, naming_format, require_shift, allow_voice, allow_escalation)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                support_role_id=%s, admin_role_id=%s, category_id=%s, log_channel_id=%s, naming_format=%s, require_shift=%s, allow_voice=%s, allow_escalation=%s
+            """,
+            guild_id, form.get('support_role'), form.get('admin_role'), form.get('category'), form.get('log_channel'), form.get('naming'),
+            'require_shift' in form, 'allow_voice' in form, 'allow_escalation' in form,
+            form.get('support_role'), form.get('admin_role'), form.get('category'), form.get('log_channel'), form.get('naming'),
+            'require_shift' in form, 'allow_voice' in form, 'allow_escalation' in form)
+
+        # Create Panel
+        elif 'create_panel' in form:
+            if bot:
+                # Trigger panel creation via bot command context simulation or direct call?
+                # Direct call might miss context. We'll insert into DB and let user run command or use a button on dashboard to "Deploy"
+                await db.execute("""
+                    INSERT INTO ticket_panels (guild_id, embed_title, embed_desc, embed_color, button_label, button_emoji, button_color)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                    embed_title=%s, embed_desc=%s, embed_color=%s, button_label=%s, button_emoji=%s, button_color=%s
+                """,
+                guild_id, form.get('p_title'), form.get('p_desc'), form.get('p_color'), form.get('b_label'), form.get('b_emoji'), form.get('b_color'),
+                form.get('p_title'), form.get('p_desc'), form.get('p_color'), form.get('b_label'), form.get('b_emoji'), form.get('b_color'))
+
+                # We can't easily make the bot send a message from here without an Interaction/Context.
+                # User should run /ticket panel in Discord after saving.
+                pass
+
+        return redirect(f'/dashboard/{guild_id}/tickets')
+
+    config = await db.fetchrow("SELECT * FROM ticket_configs WHERE guild_id = %s", guild_id)
+    panel = await db.fetchrow("SELECT * FROM ticket_panels WHERE guild_id = %s", guild_id)
+    closed_tickets = await db.fetch("SELECT * FROM active_tickets WHERE guild_id = %s AND status = 'closed' ORDER BY created_at DESC LIMIT 50", guild_id)
+
+    return await render_template('tickets.html', guild=guild, config=config or {}, panel=panel or {}, tickets=closed_tickets)
+
+@app.route('/dashboard/<int:guild_id>/emojis', methods=['GET', 'POST'])
+async def emojis_dashboard(guild_id):
+    if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
+    guild = bot.get_guild(guild_id) if bot else None
+
+    if request.method == 'POST':
+        form = await request.form
+        await db.execute("""
+            INSERT INTO emoji_settings (guild_id, target_channel_id, allow_external, only_emojis_mode, enabled)
+            VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+            target_channel_id=%s, allow_external=%s, only_emojis_mode=%s, enabled=%s
+        """,
+        guild_id, form.get('channel_id'), 'allow_external' in form, 'only_emojis' in form, 'enabled' in form,
+        form.get('channel_id'), 'allow_external' in form, 'only_emojis' in form, 'enabled' in form)
+        return redirect(f'/dashboard/{guild_id}/emojis')
+
+    settings = await db.fetchrow("SELECT * FROM emoji_settings WHERE guild_id = %s", guild_id)
+    return await render_template('emojis.html', guild=guild, settings=settings or {})
 
 # =================================================================================================
 #  🛡️ SECTIONS REFACTORED FOR MULTI-GUILD (Routes now accept guild_id)

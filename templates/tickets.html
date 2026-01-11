@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Studio 🎫</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="/static/css/mobile-style.css" rel="stylesheet">
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <div class="main-content">
+        <style>
+            :root {
+                --glass-bg: rgba(20, 20, 23, 0.7);
+                --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+                --accent: #3498db;
+            }
+            .glass-panel {
+                background: var(--glass-bg); border: var(--glass-border);
+                border-radius: 20px; padding: 25px; height: 100%;
+            }
+            .form-control, .form-select {
+                background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #fff; border-radius: 12px; padding: 10px;
+            }
+            .form-control:focus { background: rgba(0,0,0,0.5); border-color: var(--accent); color: #fff; }
+            .btn-save { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; width: 100%; }
+            .btn-save:hover { opacity: 0.9; }
+            .embed-preview { background: #2f3136; border-radius: 5px; padding: 15px; border-left: 4px solid var(--accent); margin-top: 20px; }
+            .embed-title { font-weight: bold; color: white; }
+            .embed-desc { color: #dcddde; font-size: 0.9rem; white-space: pre-wrap; }
+            .ticket-row { border-bottom: 1px solid rgba(255,255,255,0.05); padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+            .ticket-row:last-child { border-bottom: none; }
+        </style>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-dark mobile-toggler me-3 shadow-sm" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
+                <h3 class="fw-bold m-0 text-white">Ticket Studio <span style="color: var(--accent);">🎫</span></h3>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Settings Column -->
+            <div class="col-lg-6">
+                <div class="glass-panel">
+                    <h5 class="text-white mb-4"><i class="fas fa-cogs"></i> Configuration</h5>
+                    <form method="POST">
+                        <input type="hidden" name="update_config" value="1">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label>Support Role ID</label>
+                                <input type="text" name="support_role" class="form-control" value="{{ config.support_role_id or '' }}" placeholder="Role ID">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Admin Role ID (Escalation)</label>
+                                <input type="text" name="admin_role" class="form-control" value="{{ config.admin_role_id or '' }}" placeholder="Role ID">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Category ID (Tickets)</label>
+                                <input type="text" name="category" class="form-control" value="{{ config.category_id or '' }}" placeholder="Category ID">
+                            </div>
+                            <div class="col-md-6">
+                                <label>Log Channel ID</label>
+                                <input type="text" name="log_channel" class="form-control" value="{{ config.log_channel_id or '' }}" placeholder="Channel ID">
+                            </div>
+                            <div class="col-12">
+                                <label>Channel Naming Format</label>
+                                <input type="text" name="naming" class="form-control" value="{{ config.naming_format }}" placeholder="ticket-{user}">
+                                <small class="text-muted">Use <code>{user}</code> for username.</small>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" name="require_shift" {% if config.require_shift %}checked{% endif %}>
+                                <label class="form-check-label text-white">Require Staff Shift (Clock-in)</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" name="allow_voice" {% if config.allow_voice %}checked{% endif %}>
+                                <label class="form-check-label text-white">Allow Voice Tickets</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" name="allow_escalation" {% if config.allow_escalation %}checked{% endif %}>
+                                <label class="form-check-label text-white">Allow Manager Escalation</label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-save mt-3">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Panel Builder Column -->
+            <div class="col-lg-6">
+                <div class="glass-panel">
+                    <h5 class="text-white mb-4"><i class="fas fa-palette"></i> Panel Builder</h5>
+                    <form method="POST">
+                        <input type="hidden" name="create_panel" value="1">
+
+                        <div class="mb-3">
+                            <label>Embed Title</label>
+                            <input type="text" name="p_title" id="p_title" class="form-control" value="{{ panel.embed_title or 'Support Ticket' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label>Embed Description</label>
+                            <textarea name="p_desc" id="p_desc" class="form-control" rows="3">{{ panel.embed_desc or 'Click below to open a ticket.' }}</textarea>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-4">
+                                <label>Color</label>
+                                <input type="color" name="p_color" id="p_color" class="form-control form-control-color w-100" value="{{ panel.embed_color or '#3498db' }}">
+                            </div>
+                            <div class="col-8">
+                                <label>Button Label</label>
+                                <input type="text" name="b_label" class="form-control" value="{{ panel.button_label or 'Open Ticket' }}">
+                            </div>
+                        </div>
+
+                        <!-- Live Preview -->
+                        <div class="embed-preview" id="preview_box">
+                            <div class="embed-title" id="prev_title">Support Ticket</div>
+                            <div class="embed-desc" id="prev_desc">Click below to open a ticket.</div>
+                        </div>
+                        <button class="btn btn-primary w-100 mt-2 disabled" style="opacity: 0.7;">[Open Ticket Button]</button>
+
+                        <button type="submit" class="btn-save mt-3">Save Panel Config</button>
+                        <small class="text-muted d-block text-center mt-2">Use <code>/ticket panel</code> in Discord to deploy.</small>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Transcripts Column -->
+            <div class="col-12">
+                <div class="glass-panel">
+                    <h5 class="text-white mb-4"><i class="fas fa-archive"></i> Recent Transcripts</h5>
+                    {% if tickets %}
+                        {% for ticket in tickets %}
+                        <div class="ticket-row">
+                            <div>
+                                <strong class="text-white">#{{ ticket.channel_id }}</strong>
+                                <span class="text-muted ms-2"><i class="fas fa-user"></i> {{ ticket.user_id }}</span>
+                                <span class="badge bg-secondary ms-2">{{ ticket.created_at }}</span>
+                            </div>
+                            <div>
+                                {% if ticket.rating %}
+                                <span class="text-warning me-2">{{ "⭐" * ticket.rating }}</span>
+                                {% endif %}
+                                <span class="badge bg-danger">Closed</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center text-muted">No closed tickets found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Live Preview Logic
+            const titleInput = document.getElementById('p_title');
+            const descInput = document.getElementById('p_desc');
+            const colorInput = document.getElementById('p_color');
+            const prevTitle = document.getElementById('prev_title');
+            const prevDesc = document.getElementById('prev_desc');
+            const prevBox = document.getElementById('preview_box');
+
+            function updatePreview() {
+                prevTitle.innerText = titleInput.value || 'Support Ticket';
+                prevDesc.innerText = descInput.value || 'Click below...';
+                prevBox.style.borderLeftColor = colorInput.value;
+            }
+
+            [titleInput, descInput, colorInput].forEach(el => el.addEventListener('input', updatePreview));
+            updatePreview(); // Init
+        </script>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/mobile-script.js"></script>
+</body>
+</html>

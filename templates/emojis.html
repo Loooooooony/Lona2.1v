@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Manager 😃</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="/static/css/mobile-style.css" rel="stylesheet">
+</head>
+<body>
+
+    {% include 'sidebar.html' %}
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <div class="main-content">
+        <style>
+            :root {
+                --glass-bg: rgba(20, 20, 23, 0.7);
+                --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+                --accent: #f1c40f;
+            }
+            .glass-panel {
+                background: var(--glass-bg); border: var(--glass-border);
+                border-radius: 20px; padding: 25px; height: 100%;
+            }
+            .form-control, .form-select {
+                background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #fff; border-radius: 12px; padding: 10px;
+            }
+            .form-control:focus { background: rgba(0,0,0,0.5); border-color: var(--accent); color: #fff; }
+            .btn-save { background: var(--accent); color: #000; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; width: 100%; }
+            .btn-save:hover { opacity: 0.9; }
+
+            .feature-card {
+                background: rgba(255,255,255,0.03); border-radius: 15px; padding: 20px; margin-bottom: 20px;
+                display: flex; align-items: center; justify-content: space-between; border: 1px solid transparent;
+            }
+            .feature-card:hover { border-color: var(--accent); background: rgba(255,255,255,0.05); }
+            .feature-info h5 { margin: 0; color: white; font-weight: bold; }
+            .feature-info p { margin: 0; color: #aaa; font-size: 0.9rem; }
+            .feature-icon { font-size: 2rem; color: var(--accent); margin-right: 20px; }
+
+            .form-check-input {
+                width: 50px; height: 25px;
+                background-color: #333; border-color: #555;
+            }
+            .form-check-input:checked {
+                background-color: var(--accent); border-color: var(--accent);
+            }
+        </style>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-dark mobile-toggler me-3 shadow-sm" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
+                <h3 class="fw-bold m-0 text-white">Emoji Manager <span style="color: var(--accent);">😃</span></h3>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="glass-panel">
+                    <form method="POST">
+
+                        <div class="mb-4 text-center">
+                            <label class="text-white fw-bold mb-2">Target Channel</label>
+                            <input type="text" name="channel_id" class="form-control text-center" value="{{ settings.target_channel_id or '' }}" placeholder="Channel ID where emojis are managed" required>
+                            <small class="text-muted">The features below will only apply to this channel.</small>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-magic feature-icon"></i>
+                                <div class="feature-info">
+                                    <h5>Enable Manager</h5>
+                                    <p>Turn on emoji management features for this channel.</p>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="enabled" {% if settings.enabled %}checked{% endif %}>
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-ban feature-icon text-danger"></i>
+                                <div class="feature-info">
+                                    <h5>Only Emojis Mode</h5>
+                                    <p>Auto-delete any text message that isn't an emoji.</p>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="only_emojis" {% if settings.only_emojis_mode %}checked{% endif %}>
+                            </div>
+                        </div>
+
+                        <div class="feature-card">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-download feature-icon text-info"></i>
+                                <div class="feature-info">
+                                    <h5>Allow External Emojis</h5>
+                                    <p>Allow users to use external emojis (if they have Nitro).</p>
+                                </div>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="allow_external" {% if settings.allow_external %}checked{% endif %}>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-save mt-3">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/mobile-script.js"></script>
+</body>
+</html>
