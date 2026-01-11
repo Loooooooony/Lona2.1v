@@ -4,46 +4,60 @@ import asyncio
 import random
 import json
 import datetime
+import os
+import sys
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file
 
 # دالة لجلب اسم الأمر من الملف (عشان يشتغل ديناميكي)
-def get_command_name():
-    try:
-        with open('data/games_config.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get('roulette', {}).get('command_name', 'royal')
-    except:
-        return 'royal'
+# This needs guild_id, but decorators run at import time.
+# We cannot dynamic command name PER GUILD easily in discord.py without hacks.
+# For now, we keep command name static or global.
+# Or we register multiple aliases?
+# Let's assume standard 'royal' or fetch from a global config if needed,
+# OR just keep 'royal' as default and let user edit aliases in moderation?
+# The prompt says: "Ensure bot name/avatar changes update the bot globally but load settings per page context."
+# Game settings like title/color should be per guild. Command name... usually hard to make per-guild.
+# We will use 'royal' as base command, and check guild config inside.
 
 class RouletteRoyal(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.games_config = 'data/games_config.json'
-        self.death_log = 'data/death_log.json'
+        # Paths are dynamic
+
+    def get_config_path(self, guild_id):
+        return get_guild_file(guild_id, 'games_config.json')
+
+    def get_log_path(self, guild_id):
+        return get_guild_file(guild_id, 'death_log.json')
 
     # دالة لجلب النصوص الحالية من الداشبورد
-    def get_text(self):
+    def get_text(self, guild_id):
         try:
-            with open(self.games_config, 'r', encoding='utf-8') as f:
+            with open(self.get_config_path(guild_id), 'r', encoding='utf-8') as f:
                 return json.load(f).get('roulette', {})
         except:
             return {}
 
-    def log_death(self, user_name, user_id):
+    def log_death(self, guild_id, user_name, user_id):
+        path = self.get_log_path(guild_id)
         try:
-            with open(self.death_log, 'r') as f:
+            with open(path, 'r') as f:
                 logs = json.load(f)
         except:
             logs = []
             
         logs.append({"name": user_name, "id": str(user_id), "time": str(datetime.datetime.now())})
         
-        with open(self.death_log, 'w') as f:
+        with open(path, 'w') as f:
             json.dump(logs, f, indent=4)
 
-    # الأمر يتغير حسب الداشبورد
-    @commands.command(name=get_command_name(), aliases=['روليت'])
+    # الأمر يتغير حسب الداشبورد -> Fixed name 'royal' but reads config
+    @commands.command(name='royal', aliases=['روليت'])
     async def royal_game(self, ctx):
-        txt = self.get_text()
+        txt = self.get_text(ctx.guild.id)
         
         # التصميم
         title = txt.get('title', "💀 روليت الإقصاء الملكي")
@@ -115,7 +129,7 @@ class RouletteRoyal(commands.Cog):
                 
                 if chosen_slot == bullet_loc:
                     # 💀 مات
-                    self.log_death(player.name, player.id)
+                    self.log_death(ctx.guild.id, player.name, player.id)
                     txt_lose = "💥 **BOOM!** تناثر مخه!"
                     
                     try:

@@ -4,6 +4,12 @@ import json
 import datetime
 import pytz
 import asyncio
+import sys
+import os
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file
 
 # 🔥 الروابط السريعة (ضد الحظر وضد صرف المعالج)
 READERS = {
@@ -40,42 +46,48 @@ READERS = {
 class IslamicSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config_path = 'data/islamic_config.json'
         self.baghdad_tz = pytz.timezone('Asia/Baghdad')
-        self.current_stream_url = None 
+        # Store state per guild
+        self.guild_states = {}
         self.islamic_loop.start()
 
-    def load_config(self):
+    def load_config(self, guild_id):
+        path = get_guild_file(guild_id, 'islamic_config.json')
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except: return {}
 
     # خلينا الفحص كل دقيقة، كافي وزايد
     @tasks.loop(seconds=60) 
     async def islamic_loop(self):
-        config = self.load_config()
-        
-        # اذا طفوه من الداشبورد، نفصل ونرتاح
-        if not config.get('enabled', False): 
-            for vc in self.bot.voice_clients:
-                await vc.disconnect()
-            self.current_stream_url = None
-            return
+        for guild in self.bot.guilds:
+            config = self.load_config(guild.id)
 
-        now = datetime.datetime.now(self.baghdad_tz)
+            # Init guild state if missing
+            if guild.id not in self.guild_states:
+                self.guild_states[guild.id] = {'current_stream_url': None}
 
-        # 1. الأذكار (ما تصرف شي)
-        if config.get('text_channel_id'):
-            await self.handle_azkar(config, now)
+            # اذا طفوه من الداشبورد، نفصل ونرتاح
+            if not config.get('enabled', False):
+                vc = discord.utils.get(self.bot.voice_clients, guild=guild)
+                if vc: await vc.disconnect()
+                self.guild_states[guild.id]['current_stream_url'] = None
+                continue
 
-        # 2. الراديو (المهمة الصعبة)
-        if config.get('voice_channel_id'):
-            await self.handle_radio(config)
+            now = datetime.datetime.now(self.baghdad_tz)
 
-    async def handle_azkar(self, config, now):
+            # 1. الأذكار (ما تصرف شي)
+            if config.get('text_channel_id'):
+                await self.handle_azkar(guild, config, now)
+
+            # 2. الراديو (المهمة الصعبة)
+            if config.get('voice_channel_id'):
+                await self.handle_radio(guild, config)
+
+    async def handle_azkar(self, guild, config, now):
         try:
-            channel = self.bot.get_channel(int(config['text_channel_id']))
+            channel = guild.get_channel(int(config['text_channel_id']))
             if not channel: return
             if now.second > 10: return 
 
@@ -87,13 +99,13 @@ class IslamicSystem(commands.Cog):
                 await channel.send("🕌 **جمعة مباركة!**\nلا تنسوا قراءة سورة الكهف والصلاة على النبي ﷺ.")
         except: pass
 
-    async def handle_radio(self, config):
+    async def handle_radio(self, guild, config):
         try:
             channel_id = int(config['voice_channel_id'])
-            voice_channel = self.bot.get_channel(channel_id)
+            voice_channel = guild.get_channel(channel_id)
             if not voice_channel: return
 
-            voice_client = discord.utils.get(self.bot.voice_clients, guild=voice_channel.guild)
+            voice_client = discord.utils.get(self.bot.voice_clients, guild=guild)
 
             # اتصال ذكي (Deaf) لتقليل البيانات
             if not voice_client:
@@ -106,8 +118,10 @@ class IslamicSystem(commands.Cog):
             stream_data = READERS.get(selected_reader, READERS['mp3quran'])
             target_url = stream_data['url']
 
+            current_url = self.guild_states[guild.id].get('current_stream_url')
+
             # تشغيل فقط اذا لازم
-            if not voice_client.is_playing() or self.current_stream_url != target_url:
+            if not voice_client.is_playing() or current_url != target_url:
                 if voice_client.is_playing(): voice_client.stop()
                 
                 # 🔥🔥🔥 إعدادات توفير المعالج (Eco Mode) 🔥🔥🔥
@@ -121,21 +135,22 @@ class IslamicSystem(commands.Cog):
 
                 voice_client.play(
                     discord.FFmpegPCMAudio(target_url, **ffmpeg_opts),
-                    after=lambda e: self.on_play_error(e)
+                    after=lambda e: self.on_play_error(e, guild.id)
                 )
                 
-                self.current_stream_url = target_url
-                await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=f"{stream_data['name']}"))
+                self.guild_states[guild.id]['current_stream_url'] = target_url
+                # await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=f"{stream_data['name']}")) # removed to avoid status spam conflicts
 
         except Exception as e:
-            print(f"⚠️ Radio Logic Error: {e}")
+            print(f"⚠️ Radio Logic Error {guild.name}: {e}")
             # انتظار بسيط في حالة الخطأ عشان ما يضرب اللوب
             await asyncio.sleep(5)
 
-    def on_play_error(self, error):
+    def on_play_error(self, error, guild_id):
         if error:
             print(f"❌ Playback Error: {error}")
-            self.current_stream_url = None 
+            if guild_id in self.guild_states:
+                self.guild_states[guild_id]['current_stream_url'] = None
 
     @islamic_loop.before_loop
     async def before_loop(self):

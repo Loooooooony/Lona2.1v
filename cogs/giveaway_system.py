@@ -6,17 +6,19 @@ import json
 import random
 import datetime
 import os
+import sys
 
-# --- 📁 مسارات الملفات ---
-CONFIG_PATH = 'data/giveaway_config.json'
-ACTIVE_DATA_PATH = 'data/active_giveaways.json'
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file
 
 # --- 🔘 زر الانضمام الذكي ---
 class JoinButton(Button):
-    def __init__(self, bot, requirements):
+    def __init__(self, bot, requirements, guild_id):
         super().__init__(label="🎉 انضمام", style=discord.ButtonStyle.primary, custom_id="join_giveaway_btn")
         self.bot = bot
         self.requirements = requirements
+        self.guild_id = guild_id
 
     async def callback(self, interaction: discord.Interaction):
         # 1. التحقق: هل القيف اوي منتهي؟
@@ -84,21 +86,22 @@ class JoinButton(Button):
         
         # 💾 حفظ فوري في الملف (عشان لو طفى البوت)
         if self.bot.get_cog("GiveawaySystem"):
-            self.bot.get_cog("GiveawaySystem").update_data(interaction.message.id, view.participants)
+            self.bot.get_cog("GiveawaySystem").update_data(self.guild_id, interaction.message.id, view.participants)
 
 # --- 👀 الـ View (الحاوية مال الزر) ---
 class GiveawayView(View):
-    def __init__(self, bot, requirements, participants=None):
+    def __init__(self, bot, requirements, guild_id, participants=None):
         super().__init__(timeout=None) # 🔥 الزر ما يموت أبداً
         self.participants = participants if participants else []
         self.ended = False
-        self.add_item(JoinButton(bot, requirements))
+        self.guild_id = guild_id
+        self.add_item(JoinButton(bot, requirements, guild_id))
 
 # --- ⚙️ الكوج الرئيسي (النظام) ---
 class GiveawaySystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.active_giveaways = {}
+        self.active_giveaways = {} # Format: {msg_id: {data..., view}}
         # بدء مهمة مراقبة الوقت
         self.check_task.start()
 
@@ -116,29 +119,43 @@ class GiveawaySystem(commands.Cog):
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
 
+    def get_config_path(self, guild_id):
+        return get_guild_file(guild_id, 'giveaway_config.json')
+
+    def get_active_path(self, guild_id):
+        return get_guild_file(guild_id, 'active_giveaways.json')
+
     # تحديث المشاركين في الملف
-    def update_data(self, msg_id, participants):
-        data = self.load_json(ACTIVE_DATA_PATH)
+    def update_data(self, guild_id, msg_id, participants):
+        path = self.get_active_path(guild_id)
+        data = self.load_json(path)
         if str(msg_id) in data:
             data[str(msg_id)]['participants'] = participants
-            self.save_json(ACTIVE_DATA_PATH, data)
+            self.save_json(path, data)
 
     # --- 🔄 عند تشغيل البوت (Restoration) ---
     @commands.Cog.listener()
     async def on_ready(self):
         print("🔄 Loading active giveaways...")
-        data = self.load_json(ACTIVE_DATA_PATH)
         count = 0
-        for msg_id, g_data in data.items():
-            channel = self.bot.get_channel(g_data['channel_id'])
-            if channel:
-                # استرجاع الزر وتشغيله
-                view = GiveawayView(self.bot, g_data['requirements'], g_data['participants'])
-                self.bot.add_view(view, message_id=int(msg_id))
-                
-                # إرجاعه للذاكرة
-                self.active_giveaways[int(msg_id)] = {**g_data, "view": view}
-                count += 1
+
+        # We need to iterate over all guilds to find active giveaways
+        for guild in self.bot.guilds:
+            active_path = self.get_active_path(guild.id)
+            if not os.path.exists(active_path):
+                continue
+
+            data = self.load_json(active_path)
+            for msg_id, g_data in data.items():
+                channel = self.bot.get_channel(g_data['channel_id'])
+                if channel:
+                    # استرجاع الزر وتشغيله
+                    view = GiveawayView(self.bot, g_data['requirements'], guild.id, g_data['participants'])
+                    self.bot.add_view(view, message_id=int(msg_id))
+
+                    # إرجاعه للذاكرة
+                    self.active_giveaways[int(msg_id)] = {**g_data, "view": view, "guild_id": guild.id}
+                    count += 1
         print(f"✅ Restored {count} active giveaways.")
 
     # --- 🔥 أمر البدء (Prefix Command) 🔥 ---
@@ -146,7 +163,7 @@ class GiveawaySystem(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def start_giveaway(self, ctx):
         # 1. تحميل الإعدادات من الداشبورد
-        config = self.load_json(CONFIG_PATH)
+        config = self.load_json(self.get_config_path(ctx.guild.id))
         if not config:
             return await ctx.send("❌ لا يوجد قالب محفوظ! يرجى الحفظ من الداشبورد أولاً.")
 
@@ -200,7 +217,7 @@ class GiveawaySystem(commands.Cog):
         if ping == 'everyone': content += " @everyone"
         elif ping == 'here': content += " @here"
 
-        view = GiveawayView(self.bot, config)
+        view = GiveawayView(self.bot, config, ctx.guild.id)
         msg = await channel.send(content=content, embed=embed, view=view)
 
         # 5. الحفظ (Persistence)
@@ -214,23 +231,28 @@ class GiveawaySystem(commands.Cog):
         }
         
         # حفظ في الملف
-        saved = self.load_json(ACTIVE_DATA_PATH)
+        active_path = self.get_active_path(ctx.guild.id)
+        saved = self.load_json(active_path)
         saved[str(msg.id)] = giveaway_data
-        self.save_json(ACTIVE_DATA_PATH, saved)
+        self.save_json(active_path, saved)
         
         # حفظ في الذاكرة
-        self.active_giveaways[msg.id] = {**giveaway_data, "view": view}
+        self.active_giveaways[msg.id] = {**giveaway_data, "view": view, "guild_id": ctx.guild.id}
 
         # تنظيف الأمر
         try: await ctx.message.delete()
         except: pass
 
     # --- 🏁 إنهاء القيف اوي ---
-    async def end_giveaway(self, msg_id):
+    async def end_giveaway(self, msg_id, guild_id=None):
         # 1. جلب البيانات
         if msg_id not in self.active_giveaways: return False
         g_data = self.active_giveaways[msg_id]
         
+        # Resolve guild_id from memory if not provided
+        if not guild_id:
+            guild_id = g_data.get('guild_id')
+
         channel = self.bot.get_channel(g_data['channel_id'])
         if not channel: return False
         
@@ -268,10 +290,13 @@ class GiveawaySystem(commands.Cog):
 
         # 4. الحذف من النظام
         del self.active_giveaways[msg_id]
-        saved = self.load_json(ACTIVE_DATA_PATH)
-        if str(msg_id) in saved:
-            del saved[str(msg_id)]
-            self.save_json(ACTIVE_DATA_PATH, saved)
+
+        if guild_id:
+            active_path = self.get_active_path(guild_id)
+            saved = self.load_json(active_path)
+            if str(msg_id) in saved:
+                del saved[str(msg_id)]
+                self.save_json(active_path, saved)
         
         return True
 

@@ -3,19 +3,19 @@ from discord.ext import commands
 import asyncio
 import random
 import json
+import sys
+import os
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file
 from data.codenames_data import WORDS_LIST, EMOJI_LIST
 
-# دالة لجلب اسم الأمر من الملف
-def get_command_name():
-    try:
-        with open('data/games_config.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get('codenames', {}).get('command_name', 'codenames')
-    except: return 'codenames'
-
 class CodenamesSession:
-    def __init__(self, channel_id):
+    def __init__(self, channel_id, guild_id):
         self.channel_id = channel_id
+        self.guild = None # Updated later
+        self.guild_id = guild_id
         self.game_active = False
         self.players = []
         self.red_team = []
@@ -35,36 +35,37 @@ class CodenamesGame(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.sessions = {}
-        self.games_config = 'data/games_config.json'
 
-    def get_session(self, channel_id):
+    def get_session(self, channel_id, guild_id):
         if channel_id not in self.sessions:
-            self.sessions[channel_id] = CodenamesSession(channel_id)
+            self.sessions[channel_id] = CodenamesSession(channel_id, guild_id)
         return self.sessions[channel_id]
 
-    def get_text(self):
+    def get_text(self, guild_id):
+        path = get_guild_file(guild_id, 'games_config.json')
         try:
-            with open(self.games_config, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f).get('codenames', {})
         except: return {}
 
-    # الأمر يتغير حسب الداشبورد
-    @commands.command(name=get_command_name(), aliases=["cn"])
+    @commands.command(name='codenames', aliases=["cn"])
     async def start_codenames(self, ctx):
-        session = self.get_session(ctx.channel.id)
+        session = self.get_session(ctx.channel.id, ctx.guild.id)
+        session.guild = ctx.guild
         if session.game_active:
             await ctx.send("⛔ توجد لعبة جارية!")
             return
 
         # إعدادات الداشبورد
-        txt = self.get_text()
+        txt = self.get_text(ctx.guild.id)
         title = txt.get('title', "🕵️‍♂️ الأسماء الحركية")
         desc = txt.get('description', "انضموا..")
         color = int(txt.get('color', '#e74c3c').replace('#', ''), 16)
 
         # تصفير الجلسة
-        self.sessions[ctx.channel.id] = CodenamesSession(ctx.channel.id)
+        self.sessions[ctx.channel.id] = CodenamesSession(ctx.channel.id, ctx.guild.id)
         session = self.sessions[ctx.channel.id]
+        session.guild = ctx.guild
         session.host = ctx.author
         session.players.append(ctx.author)
 
