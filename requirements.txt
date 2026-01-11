@@ -1,0 +1,10 @@
+discord.py
+python-dotenv
+pillow
+arabic-reshaper
+python-bidi
+quart
+watchdog
+aiohttp
+PyNaCl
+pytz
