@@ -7,8 +7,7 @@ import json
 import io
 import re
 import datetime
-from utils.data_manager import get_guild_file, check_guild_password, get_guild_asset
-from database import db
+from utils.data_manager import get_guild_file, check_guild_password, get_guild_asset, load_guild_json, save_guild_json
 
 app = Quart(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -82,7 +81,12 @@ async def dashboard(guild_id):
         return redirect(f'/login/{guild_id}')
     
     guild = bot.get_guild(guild_id) if bot else None
-    return await render_template('sidebar.html', guild=guild, content_template=None)
+    # Fix: Render full dashboard page, not just sidebar
+    return await render_template('index.html', guild=guild,
+                                 ping=round(bot.latency * 1000) if bot else 0,
+                                 guild_count=len(bot.guilds) if bot else 0,
+                                 user_count=sum([g.member_count for g in bot.guilds]) if bot else 0,
+                                 uptime="Calculating...") # Uptime logic can be added later
 
 # --- 🔐 تسجيل الدخول للمحرر (Global Admin) ---
 @app.route('/login_editor', methods=['POST'])
@@ -157,42 +161,53 @@ async def tickets_dashboard(guild_id):
         form = await request.form
         # Update Config
         if 'update_config' in form:
-            await db.execute("""
-                INSERT INTO ticket_configs (guild_id, support_role_id, admin_role_id, category_id, log_channel_id, naming_format, require_shift, allow_voice, allow_escalation)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                support_role_id=%s, admin_role_id=%s, category_id=%s, log_channel_id=%s, naming_format=%s, require_shift=%s, allow_voice=%s, allow_escalation=%s
-            """,
-            guild_id, form.get('support_role'), form.get('admin_role'), form.get('category'), form.get('log_channel'), form.get('naming'),
-            'require_shift' in form, 'allow_voice' in form, 'allow_escalation' in form,
-            form.get('support_role'), form.get('admin_role'), form.get('category'), form.get('log_channel'), form.get('naming'),
-            'require_shift' in form, 'allow_voice' in form, 'allow_escalation' in form)
+            data = {
+                "support_role_id": form.get('support_role'),
+                "admin_role_id": form.get('admin_role'),
+                "category_id": form.get('category'),
+                "log_channel_id": form.get('log_channel'),
+                "naming_format": form.get('naming'),
+                "require_shift": 'require_shift' in form,
+                "allow_voice": 'allow_voice' in form,
+                "allow_escalation": 'allow_escalation' in form
+            }
+            await save_guild_json(guild_id, 'tickets_config.json', data)
 
         # Create Panel
         elif 'create_panel' in form:
-            if bot:
-                # Trigger panel creation via bot command context simulation or direct call?
-                # Direct call might miss context. We'll insert into DB and let user run command or use a button on dashboard to "Deploy"
-                await db.execute("""
-                    INSERT INTO ticket_panels (guild_id, embed_title, embed_desc, embed_color, button_label, button_emoji, button_color)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE
-                    embed_title=%s, embed_desc=%s, embed_color=%s, button_label=%s, button_emoji=%s, button_color=%s
-                """,
-                guild_id, form.get('p_title'), form.get('p_desc'), form.get('p_color'), form.get('b_label'), form.get('b_emoji'), form.get('b_color'),
-                form.get('p_title'), form.get('p_desc'), form.get('p_color'), form.get('b_label'), form.get('b_emoji'), form.get('b_color'))
+            # We save the panel settings, but we still need the user to "deploy" it via command or button.
+            # But the requirement was to let them create it.
+            # We will save it to tickets_panel.json
+            panel_data = {
+                "embed_title": form.get('p_title'),
+                "embed_desc": form.get('p_desc'),
+                "embed_color": form.get('p_color'),
+                "button_label": form.get('b_label'),
+                "button_emoji": form.get('b_emoji'),
+                "button_color": form.get('b_color')
+            }
+            await save_guild_json(guild_id, 'tickets_panel.json', panel_data)
 
-                # We can't easily make the bot send a message from here without an Interaction/Context.
-                # User should run /ticket panel in Discord after saving.
-                pass
+            # Optionally trigger bot to send the panel if we can (advanced)
+            # For now, just save config.
 
         return redirect(f'/dashboard/{guild_id}/tickets')
 
-    config = await db.fetchrow("SELECT * FROM ticket_configs WHERE guild_id = %s", guild_id)
-    panel = await db.fetchrow("SELECT * FROM ticket_panels WHERE guild_id = %s", guild_id)
-    closed_tickets = await db.fetch("SELECT * FROM active_tickets WHERE guild_id = %s AND status = 'closed' ORDER BY created_at DESC LIMIT 50", guild_id)
+    config = await load_guild_json(guild_id, 'tickets_config.json')
+    panel = await load_guild_json(guild_id, 'tickets_panel.json')
+    active_tickets_map = await load_guild_json(guild_id, 'active_tickets.json')
 
-    return await render_template('tickets.html', guild=guild, config=config or {}, panel=panel or {}, tickets=closed_tickets)
+    # Filter closed tickets for display
+    closed_tickets = []
+    if active_tickets_map:
+        for ch_id, t_data in active_tickets_map.items():
+            if t_data.get('status') == 'closed':
+                closed_tickets.append(t_data)
+
+    # Sort by created_at desc (if available, otherwise random)
+    closed_tickets.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+    return await render_template('tickets.html', guild=guild, config=config, panel=panel, tickets=closed_tickets)
 
 @app.route('/dashboard/<int:guild_id>/emojis', methods=['GET', 'POST'])
 async def emojis_dashboard(guild_id):
@@ -201,18 +216,17 @@ async def emojis_dashboard(guild_id):
 
     if request.method == 'POST':
         form = await request.form
-        await db.execute("""
-            INSERT INTO emoji_settings (guild_id, target_channel_id, allow_external, only_emojis_mode, enabled)
-            VALUES (%s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-            target_channel_id=%s, allow_external=%s, only_emojis_mode=%s, enabled=%s
-        """,
-        guild_id, form.get('channel_id'), 'allow_external' in form, 'only_emojis' in form, 'enabled' in form,
-        form.get('channel_id'), 'allow_external' in form, 'only_emojis' in form, 'enabled' in form)
+        data = {
+            "target_channel_id": form.get('channel_id'),
+            "allow_external": 'allow_external' in form,
+            "only_emojis_mode": 'only_emojis' in form,
+            "enabled": 'enabled' in form
+        }
+        await save_guild_json(guild_id, 'emoji_settings.json', data)
         return redirect(f'/dashboard/{guild_id}/emojis')
 
-    settings = await db.fetchrow("SELECT * FROM emoji_settings WHERE guild_id = %s", guild_id)
-    return await render_template('emojis.html', guild=guild, settings=settings or {})
+    settings = await load_guild_json(guild_id, 'emoji_settings.json')
+    return await render_template('emojis.html', guild=guild, settings=settings)
 
 # =================================================================================================
 #  🛡️ SECTIONS REFACTORED FOR MULTI-GUILD (Routes now accept guild_id)
@@ -224,7 +238,8 @@ async def moderation_panel(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    config_path = get_guild_file(guild_id, 'moderation.json')
+    # Use helper
+    config = await load_guild_json(guild_id, 'moderation.json')
     
     # Default commands
     default_cmds = {
@@ -249,20 +264,13 @@ async def moderation_panel(guild_id):
     }
 
     updated = False
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f: config = json.load(f)
-        for k, v in default_cmds.items():
-            if k not in config: 
-                config[k] = v
-                updated = True
-        
-        if updated:
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=4, ensure_ascii=False)
-    except:
-        config = default_cmds
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
+    for k, v in default_cmds.items():
+        if k not in config:
+            config[k] = v
+            updated = True
+
+    if updated:
+        await save_guild_json(guild_id, 'moderation.json', config)
 
     return await render_template('moderation.html', commands=config, guild=guild)
 
@@ -275,12 +283,11 @@ async def toggle_mod_cmd():
     
     if not is_authorized(guild_id): return {"status": "error", "msg": "Unauthorized"}
 
-    config_path = get_guild_file(guild_id, 'moderation.json')
+    config = await load_guild_json(guild_id, 'moderation.json')
     try:
-        with open(config_path, 'r', encoding='utf-8') as f: config = json.load(f)
         if cmd_key in config:
             config[cmd_key]['enabled'] = state
-            with open(config_path, 'w', encoding='utf-8') as f: json.dump(config, f, indent=4)
+            await save_guild_json(guild_id, 'moderation.json', config)
             return {"status": "success"}
     except Exception as e:
         return {"status": "error", "msg": str(e)}
@@ -291,10 +298,8 @@ async def edit_mod_cmd(guild_id, cmd_key):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    config_path = get_guild_file(guild_id, 'moderation.json')
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f: config = json.load(f)
-    except: return redirect(f'/dashboard/{guild_id}/moderation')
+    config = await load_guild_json(guild_id, 'moderation.json')
+    if not config: return redirect(f'/dashboard/{guild_id}/moderation')
 
     if cmd_key not in config: return redirect(f'/dashboard/{guild_id}/moderation')
     
@@ -313,8 +318,7 @@ async def edit_mod_cmd(guild_id, cmd_key):
         config[cmd_key]['delete_after'] = int(form.get('delete_after', 0))
         config[cmd_key]['enabled'] = 'enabled' in form
 
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
+        await save_guild_json(guild_id, 'moderation.json', config)
             
         return redirect(f'/dashboard/{guild_id}/moderation')
 
@@ -326,7 +330,7 @@ async def game_studio(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    config_path = get_guild_file(guild_id, 'games_config.json')
+    config = await load_guild_json(guild_id, 'games_config.json')
     
     default_config = {
         "roulette": {
@@ -351,11 +355,9 @@ async def game_studio(guild_id):
         }
     }
 
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f: config = json.load(f)
-    except:
+    if not config:
         config = default_config
-        with open(config_path, 'w', encoding='utf-8') as f: json.dump(config, f, indent=4)
+        await save_guild_json(guild_id, 'games_config.json', config)
 
     if request.method == 'POST':
         form = await request.form
@@ -393,8 +395,7 @@ async def game_studio(guild_id):
         config['spyfall']['btn_join'] = form.get('s_btn_join')
         config['spyfall']['btn_start'] = form.get('s_btn_start')
         
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4, ensure_ascii=False)
+        await save_guild_json(guild_id, 'games_config.json', config)
             
         msg = "✅ تم الحفظ!"
         return await render_template('game_studio.html', config=config, success=msg, guild=guild)
@@ -407,12 +408,8 @@ async def giveaway_panel(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    config_path = get_guild_file(guild_id, 'giveaway_config.json')
-    active_path = get_guild_file(guild_id, 'active_giveaways.json')
-    
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f: config = json.load(f)
-    except: config = {}
+    config = await load_guild_json(guild_id, 'giveaway_config.json')
+    active_giveaways = await load_guild_json(guild_id, 'active_giveaways.json')
 
     if request.method == 'POST':
         form = await request.form
@@ -445,41 +442,30 @@ async def giveaway_panel(guild_id):
             "min_account_age": int(form.get('min_account_age', 0) or 0),
             "min_server_age": int(form.get('min_server_age', 0) or 0)
         }        
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(new_config, f, indent=4, ensure_ascii=False)
+        await save_guild_json(guild_id, 'giveaway_config.json', new_config)
 
         return await render_template('giveaway.html', config=new_config, active_list=[], success="✅ تم حفظ القالب الشامل!", guild=guild)
 
     active_list = []
-    if os.path.exists(active_path):
-        try:
-            with open(active_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                for msg_id, g_data in data.items():
-                    active_list.append({
-                        'id': msg_id,
-                        'prize': g_data.get('prize', 'جائزة'),
-                        'winners': g_data.get('winners_count', 1),
-                        'participants': len(g_data.get('participants', [])),
-                        'end_time': datetime.datetime.fromtimestamp(g_data['end_timestamp']).strftime('%H:%M:%S')
-                    })
-        except: pass
+    if active_giveaways:
+        for msg_id, g_data in active_giveaways.items():
+            active_list.append({
+                'id': msg_id,
+                'prize': g_data.get('prize', 'جائزة'),
+                'winners': g_data.get('winners_count', 1),
+                'participants': len(g_data.get('participants', [])),
+                'end_time': datetime.datetime.fromtimestamp(g_data['end_timestamp']).strftime('%H:%M:%S')
+            })
 
     return await render_template('giveaway.html', config=config, active_list=active_list, guild=guild)
 
 # --- ⚙️ الإعدادات (Settings - Now Per Guild for Bot Naming etc?) ---
-# WARNING: Changing Bot Name/Avatar is Global. We should clarify this in UI or restrict it.
-# The user asked: "General/Settings: Ensure bot name/avatar changes update the bot globally but load settings per page context."
 @app.route('/dashboard/<int:guild_id>/settings', methods=['GET', 'POST'])
 async def settings(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
-
-    # We still use a per-guild status config file if they want to save *preferences* but bot status is global.
-    # However, usually status is global. Let's make it clear.
-    # For now, I will use a global status file because Discord Bots only have ONE status.
-    # But I will save it in data/ for global.
     
+    # Global status file
     status_config_path = 'data/status_config.json'
 
     if request.method == 'POST':
@@ -551,12 +537,7 @@ async def auto_reply_manager(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    path = get_guild_file(guild_id, 'auto_reply.json')
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            replies = json.load(f)
-    except:
-        replies = {}
+    replies = await load_guild_json(guild_id, 'auto_reply.json')
 
     if request.method == 'POST':
         form = await request.form
@@ -565,10 +546,9 @@ async def auto_reply_manager(guild_id):
             response = form.get('response').strip()
             if trigger and response:
                 replies[trigger] = response
-                with open(path, 'w', encoding='utf-8') as f:
-                    json.dump(replies, f, indent=4, ensure_ascii=False)
+                await save_guild_json(guild_id, 'auto_reply.json', replies)
+
                 # Notify cog to reload for this guild?
-                # Ideally cog reads from file every time or we update cog memory
                 if bot and bot.get_cog('AutoReply'):
                      bot.get_cog('AutoReply').update_guild_replies(guild_id, replies)
 
@@ -576,8 +556,8 @@ async def auto_reply_manager(guild_id):
             trigger = form.get('delete_trigger')
             if trigger in replies:
                 del replies[trigger]
-                with open(path, 'w', encoding='utf-8') as f:
-                    json.dump(replies, f, indent=4, ensure_ascii=False)
+                await save_guild_json(guild_id, 'auto_reply.json', replies)
+
                 if bot and bot.get_cog('AutoReply'):
                     bot.get_cog('AutoReply').update_guild_replies(guild_id, replies)
                     
@@ -589,21 +569,19 @@ async def logger_settings(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    path = get_guild_file(guild_id, 'log_config.json')
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-    except:
+    config = await load_guild_json(guild_id, 'log_config.json')
+    if not config:
         config = {"log_channel_id": "", "events": {}}
 
     if request.method == 'POST':
         form = await request.form
         config['log_channel_id'] = form.get('channel_id')
         event_keys = ['msg_delete', 'msg_edit', 'msg_bulk', 'member_join', 'member_leave', 'member_update', 'user_update', 'voice_update', 'emoji_update', 'server_update', 'invite_update', 'ban_add', 'ban_remove', 'channel_create', 'channel_delete', 'channel_update', 'role_create', 'role_delete', 'role_update']
+        if 'events' not in config: config['events'] = {}
         for key in event_keys:
             config['events'][key] = key in form
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4)
+
+        await save_guild_json(guild_id, 'log_config.json', config)
         return await render_template('logger_settings.html', config=config, success="✅ تم الحفظ!", guild=guild)
     
     return await render_template('logger_settings.html', config=config, guild=guild)
@@ -730,12 +708,7 @@ async def welcome_studio(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    config_path = get_guild_file(guild_id, 'welcome_config.json')
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-    except:
-        config = {}
+    config = await load_guild_json(guild_id, 'welcome_config.json')
         
     if request.method == 'POST':
         form = await request.form
@@ -753,8 +726,7 @@ async def welcome_studio(guild_id):
             path = get_guild_file(guild_id, 'images/welcome_font.ttf')
             await files['font_file'].save(path)
             
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config, f, indent=4)
+        await save_guild_json(guild_id, 'welcome_config.json', config)
             
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return {"status": "success", "msg": "✅ تم الحفظ!"}
@@ -798,26 +770,18 @@ async def roulette_control(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    config_path = get_guild_file(guild_id, 'roulette_config.json')
-    log_path = get_guild_file(guild_id, 'death_log.json')
+    config = await load_guild_json(guild_id, 'roulette_config.json')
+    if not config: config = {"mode": "kick"}
     
+    logs = await load_guild_json(guild_id, 'death_log.json')
+    if logs is None: logs = [] # load_guild_json returns {} default if not specified list
+    if isinstance(logs, dict): logs = [] # Safety check
+
     if request.method == 'POST':
         form = await request.form
-        with open(config_path, 'w') as f:
-            json.dump({"mode": form.get('mode')}, f)
+        config['mode'] = form.get('mode')
+        await save_guild_json(guild_id, 'roulette_config.json', config)
         return redirect(f'/dashboard/{guild_id}/roulette_control')
-        
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-    except:
-        config = {"mode": "kick"}
-        
-    try:
-        with open(log_path, 'r') as f:
-            logs = json.load(f)
-    except:
-        logs = []
         
     return await render_template('roulette.html', config=config, logs=logs[::-1], guild=guild)
 
@@ -827,23 +791,17 @@ async def islamic_settings(guild_id):
     if not is_authorized(guild_id): return redirect(f'/login/{guild_id}')
     guild = bot.get_guild(guild_id) if bot else None
 
-    config_path = get_guild_file(guild_id, 'islamic_config.json')
+    config = await load_guild_json(guild_id, 'islamic_config.json')
+
     if request.method == 'POST':
         form = await request.form
         data = {
             "enabled": 'enabled' in form, "voice_channel_id": form.get('voice_channel_id'), "text_channel_id": form.get('text_channel_id'),
             "reader": form.get('reader'), "azkar_sabah": 'azkar_sabah' in form, "azkar_masa": 'azkar_masa' in form, "friday_kahf": 'friday_kahf' in form
         }
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4)
+        await save_guild_json(guild_id, 'islamic_config.json', data)
         return redirect(f'/dashboard/{guild_id}/islamic')
     
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-    except:
-        config = {}
-        
     return await render_template('islamic.html', config=config, guild=guild)
 
 # --- 📡 Live Chat ---
