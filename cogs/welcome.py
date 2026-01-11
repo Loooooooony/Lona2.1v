@@ -6,30 +6,42 @@ import os
 import json
 import arabic_reshaper
 from bidi.algorithm import get_display
+import sys
+import aiohttp
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file, get_guild_asset
 
 class WelcomeSystem(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config_path = 'data/welcome_config.json'
 
     # دالة لتحميل الإعدادات بأمان
-    def load_config(self):
+    def load_config(self, guild_id):
+        path = get_guild_file(guild_id, 'welcome_config.json')
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f: return json.load(f)
+            with open(path, 'r', encoding='utf-8') as f: return json.load(f)
         except: return {}
 
     async def send_welcome_card(self, member, is_test=False):
-        config = self.load_config()
-        if not config.get('enabled') and not is_test: return
+        # Determine guild_id
+        if is_test:
+            # If testing, member might be the bot user, need to find a guild or passed implicitly
+            # In test_welcome_api we pass member as guild.me, so member.guild works
+            pass
 
-        guild = member.guild if not is_test else (self.bot.guilds[0] if self.bot.guilds else None)
+        guild = member.guild
         if not guild: return
+
+        config = self.load_config(guild.id)
+        if not config.get('enabled') and not is_test: return
 
         # 1. تجهيز النصوص والمتغيرات
         if is_test:
             user_name = "Lona Bot"
-            server_name = "Lona Server"
-            member_count = "100"
+            server_name = guild.name
+            member_count = str(guild.member_count)
             inviter_name = "Admin"
             invites_count = "10"
             user_avatar_url = str(self.bot.user.avatar.url) if self.bot.user.avatar else None
@@ -56,7 +68,8 @@ class WelcomeSystem(commands.Cog):
         
         file = None
         try:
-            bg_path = 'data/welcome_bg.png'
+            # Determine paths based on guild
+            bg_path = get_guild_asset(guild.id, 'welcome_bg.png', 'data/welcome_bg.png')
             
             # تحميل الخلفية وتغيير حجمها لتطابق الموقع
             if os.path.exists(bg_path):
@@ -71,6 +84,9 @@ class WelcomeSystem(commands.Cog):
             try:
                 # تحميل الصورة
                 if user_avatar_url:
+                    if not hasattr(self.bot, 'session') or self.bot.session.closed:
+                        self.bot.session = aiohttp.ClientSession()
+
                     async with self.bot.session.get(user_avatar_url) as resp:
                         if resp.status == 200:
                             data = await resp.read()
@@ -115,7 +131,10 @@ class WelcomeSystem(commands.Cog):
 
                 # إعداد الخط
                 f_size = int(float(config.get('font_size', 40)))
-                font_path = 'data/welcome_font.ttf'
+
+                # Custom font per guild or default
+                font_path = get_guild_asset(guild.id, 'welcome_font.ttf', 'data/welcome_font.ttf')
+
                 font = None
                 
                 # محاولة تحميل الخط المرفوع
@@ -155,10 +174,10 @@ class WelcomeSystem(commands.Cog):
             msg_content = "🧪 **[تجربة]**\n" + msg_content
 
         channel_id = config.get('channel_id')
-        channel = self.bot.get_channel(int(channel_id))
-        
-        if channel:
-            await channel.send(content=msg_content, file=file)
+        if channel_id:
+            channel = guild.get_channel(int(channel_id))
+            if channel:
+                await channel.send(content=msg_content, file=file)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -166,8 +185,8 @@ class WelcomeSystem(commands.Cog):
 
     # نحتاج نجهز Session لتحميل الصور
     async def cog_load(self):
-        import aiohttp
-        self.bot.session = aiohttp.ClientSession()
+        if not hasattr(self.bot, 'session'):
+            self.bot.session = aiohttp.ClientSession()
 
 async def setup(bot):
     await bot.add_cog(WelcomeSystem(bot))

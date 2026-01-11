@@ -4,19 +4,17 @@ import json
 import random
 import asyncio
 from difflib import SequenceMatcher
+import sys
+import os
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file
 
 # --- ⚙️ إعدادات الوقت (ثواني) ---
 FACE_OFF_TIME = 20
 TURN_TIME = 15
 STEAL_TIME = 20
-
-# --- 🛠️ دالة لجلب اسم الأمر من الملف ---
-def get_command_name():
-    try:
-        with open('data/games_config.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get('family', {}).get('command_name', 'family')
-    except: return 'family'
 
 def check_similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
@@ -178,7 +176,7 @@ class GameLobbyView(discord.ui.View):
 
 # --- 🧠 محرك اللعبة (Game Engine) ---
 class GameSession:
-    def __init__(self, ctx, red_team, blue_team, questions):
+    def __init__(self, ctx, red_team, blue_team, questions, guild_id):
         self.ctx = ctx
         self.red_team = red_team
         self.blue_team = blue_team
@@ -189,6 +187,7 @@ class GameSession:
         self.bank_points = 0
         self.strikes = 0
         self.controlling_team = None 
+        self.guild_id = guild_id
 
     def get_board_embed(self, title_prefix=""):
         q_text = self.current_q["question"]
@@ -215,23 +214,23 @@ class GameSession:
 class FamilyFeud(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.active_games = {}
-        self.games_config = 'data/games_config.json'
+        self.active_games = {} # Key: Channel ID, Value: Session
 
     # جلب النصوص من ملف الاعدادات
-    def get_text(self):
+    def get_text(self, guild_id):
+        path = get_guild_file(guild_id, 'games_config.json')
         try:
-            with open(self.games_config, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f).get('family', {})
         except: return {}
 
     # الأمر الديناميكي
-    @commands.command(name=get_command_name(), aliases=["عائلتي"])
+    @commands.command(name='family', aliases=["عائلتي"])
     async def start(self, ctx):
         if ctx.channel.id in self.active_games: return await ctx.send("اكو لعبة شغالة!")
 
         # تحميل النصوص
-        txt = self.get_text()
+        txt = self.get_text(ctx.guild.id)
 
         # 1. قائمة الإعدادات (Setup)
         setup_view = SetupView(ctx, ctx.author, txt)
@@ -251,13 +250,14 @@ class FamilyFeud(commands.Cog):
         if not lobby_view.started: return await ctx.send("تكنسلت اللعبة.")
 
         try:
+            # Questions are GLOBAL
             with open("data/questions.json", "r", encoding="utf-8") as f:
                 qs = json.load(f)
             game_questions = random.sample(qs, min(3, len(qs)))
         except:
             return await ctx.send("ملف الأسئلة فارغ!")
 
-        session = GameSession(ctx, lobby_view.red_team, lobby_view.blue_team, game_questions)
+        session = GameSession(ctx, lobby_view.red_team, lobby_view.blue_team, game_questions, ctx.guild.id)
         self.active_games[ctx.channel.id] = session
         
         await ctx.send(f"🏆 **بدأت اللعبة!**\n⚠️ تذكير: الجواب يبدأ بنقطة `.`")

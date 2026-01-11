@@ -2,68 +2,89 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دخول محمي 🔒</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>تسجيل الدخول - {{ guild.name if guild else 'Unknown' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-    
     <style>
-        body { 
-            background-color: #050507; color: #fff; font-family: 'Cairo'; 
-            height: 100vh; display: flex; align-items: center; justify-content: center;
-            background-image: radial-gradient(circle at 50% 10%, rgba(255, 183, 197, 0.1), transparent 40%);
+        body {
+            background-color: #0f0f13;
+            color: white;
+            font-family: 'Cairo', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
-        .login-card { 
-            background: rgba(20, 20, 23, 0.9); border: 1px solid rgba(255,255,255,0.1); 
-            padding: 40px; border-radius: 24px; text-align: center; width: 100%; max-width: 380px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        .login-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            width: 350px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .server-icon { 
-            width: 90px; height: 90px; border-radius: 50%; border: 3px solid #ffb7c5; 
-            margin-bottom: 20px; object-fit: cover; box-shadow: 0 0 20px rgba(255, 183, 197, 0.2);
+        .login-box h2 {
+            margin-bottom: 20px;
         }
-        .btn-enter { 
-            background: linear-gradient(45deg, #ffb7c5, #ff8fa3); color: #000; font-weight: bold; 
-            width: 100%; border: none; padding: 12px; border-radius: 12px; margin-top: 20px; transition: 0.3s;
+        .login-box input {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: #222;
+            color: white;
+            text-align: center;
         }
-        .btn-enter:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(255, 183, 197, 0.3); }
-        .form-control { 
-            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; 
-            text-align: center; font-size: 1.2rem; letter-spacing: 5px; border-radius: 12px; padding: 12px;
+        .login-box button {
+            background: #ff007f;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
         }
-        .form-control:focus { background: rgba(0,0,0,0.6); border-color: #ffb7c5; color: #fff; box-shadow: none; }
+        .error {
+            color: #ff4444;
+            margin-bottom: 15px;
+        }
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        {% if guild and guild.icon %}
-        <img src="{{ guild.icon.url }}" class="server-icon">
-        {% else %}
-        <img src="https://cdn.discordapp.com/embed/avatars/0.png" class="server-icon">
-        {% endif %}
-        
-        <h4 class="fw-bold mb-4">
-            {% if guild %}{{ guild.name }}{% else %}سيرفر غير معروف{% endif %}
-        </h4>
-        
-        {% if error %}
-        <div class="alert alert-danger py-2 small border-0 bg-danger bg-opacity-25 text-danger mb-4">
-            <i class="fas fa-exclamation-circle"></i> {{ error }}
-        </div>
-        {% endif %}
+<div class="login-box">
+    {% if guild %}
+        <img src="{{ guild.icon.url if guild.icon else 'https://cdn.discordapp.com/embed/avatars/0.png' }}" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px;">
+        <h2>الدخول لـ {{ guild.name }}</h2>
+    {% else %}
+        <h2>سيرفر غير موجود</h2>
+    {% endif %}
 
-        <form method="POST">
-            <label class="mb-2 text-muted small fw-bold">أدخل مفتاح السيرفر</label>
-            <input type="password" name="password" class="form-control" placeholder="••••••" required autofocus>
-            <button type="submit" class="btn-enter">دخول للوحة التحكم</button>
-        </form>
-        
-        <div class="mt-4">
-            <a href="/" class="text-decoration-none text-muted small"><i class="fas fa-arrow-right"></i> اختيار سيرفر آخر</a>
-        </div>
-    </div>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <input type="password" name="password" placeholder="أدخل كلمة مرور الداشبورد" required>
+        <br>
+        <button type="submit">دخول 🚀</button>
+    </form>
+
+    <p style="font-size: 0.8rem; color: #666; margin-top: 20px;">
+        اذا لم يكن لديك كلمة مرور، اطلب من الآونر كتابة الأمر:<br>
+        <code>!setpanel [password]</code>
+    </p>
+
+    <a href="/" class="back-link">← العودة للقائمة</a>
+</div>
 
 </body>
 </html>

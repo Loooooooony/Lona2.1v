@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="mobile-style.css" rel="stylesheet">
+    <link href="/static/mobile-style.css" rel="stylesheet">
 </head>
 <body>
 
@@ -219,7 +219,7 @@
                 <div class="glass-panel sticky-top" style="top: 20px; z-index: 1;">
                     <h5 class="fw-bold mb-4" style="color: var(--neon-cyan);"><i class="fas fa-plus-circle"></i> تعليم رد جديد</h5>
                     
-                    <form method="POST">
+                    <form method="POST" action="/dashboard/{{ guild.id }}/auto_reply">
                         <input type="hidden" name="add_trigger" value="1">
                         
                         <div class="mb-3">
@@ -257,7 +257,7 @@
                                             <i class="fas fa-level-down-alt fa-rotate-90 text-muted"></i> {{ response }}
                                         </div>
                                     </div>
-                                    <form method="POST" class="m-0">
+                                    <form method="POST" class="m-0" action="/dashboard/{{ guild.id }}/auto_reply">
                                         <input type="hidden" name="delete_trigger" value="{{ trigger }}">
                                         <button class="btn-del" onclick="return confirm('هل أنت متأكد من مسح هذا الرد؟')">
                                             <i class="fas fa-trash-alt"></i>
@@ -305,6 +305,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <script src="mobile-script.js"></script>
+    <script src="/static/mobile-script.js"></script>
 </body>
 </html>

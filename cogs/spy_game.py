@@ -4,8 +4,14 @@ import asyncio
 import random
 import math
 import json
+import sys
+import os
 
-# --- 🌍 مواضيع عامة ---
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file
+
+# --- 🌍 مواضيع عامة (Global) ---
 TOPICS = {
     "أماكن عامة": ["مستشفى 🏥", "مدرسة 🏫", "سجن 👮", "مطار ✈️", "حلاق 💇‍♂️", "مطعم 🍽️", "سوك (سوق) 🛒", "سينما 🍿", "مدينة ألعاب 🎡", "ملعب ⚽"],
     "أكلات": ["بيتزا 🍕", "دولمة 🥘", "فلافل 🥙", "سمك مسكوف 🐟", "اندومي 🍜", "بيض سلق 🥚", "شاورما 🌯", "باجة 🐑", "رقي 🍉", "قيمة 🍲"],
@@ -14,16 +20,8 @@ TOPICS = {
     "وظائف": ["دكتور 👨‍⚕️", "شرطي 👮", "معلم 👨‍🏫", "سائق تكسي 🚕", "خباز 🍞", "عامل بناء 🧱", "طبيب أسنان 🦷", "جندي 🪖", "طيار ✈️"]
 }
 
-# --- 🛠️ دالة لجلب اسم الأمر من الملف ---
-def get_command_name():
-    try:
-        with open('data/games_config.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            return data.get('spyfall', {}).get('command_name', 'spy')
-    except: return 'spy'
-
 class GameSession:
-    def __init__(self):
+    def __init__(self, guild_id):
         self.game_active = False
         self.players = []
         self.host = None
@@ -37,16 +35,16 @@ class GameSession:
         self.game_mode = "classic"
         self.turn_order = []
         self.round_count = 0
+        self.guild_id = guild_id
 
 class SpyGame(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.sessions = {}
-        self.games_config = 'data/games_config.json'
 
-    def get_session(self, channel_id):
+    def get_session(self, channel_id, guild_id):
         if channel_id not in self.sessions:
-            self.sessions[channel_id] = GameSession()
+            self.sessions[channel_id] = GameSession(guild_id)
         return self.sessions[channel_id]
 
     def clear_session(self, channel_id):
@@ -54,28 +52,29 @@ class SpyGame(commands.Cog):
             del self.sessions[channel_id]
 
     # جلب النصوص من ملف الاعدادات
-    def get_text(self):
+    def get_text(self, guild_id):
+        path = get_guild_file(guild_id, 'games_config.json')
         try:
-            with open(self.games_config, 'r', encoding='utf-8') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 return json.load(f).get('spyfall', {})
         except: return {}
 
     # --- 1️⃣ اللوبي ---
-    @commands.command(name=get_command_name(), aliases=["برا_السالفة"])
+    @commands.command(name='spy', aliases=["برا_السالفة"])
     async def start_spy(self, ctx):
-        session = self.get_session(ctx.channel.id)
+        session = self.get_session(ctx.channel.id, ctx.guild.id)
         if session.game_active:
             await ctx.send("اكو لعبة شغالة بهالقناة! كملوها بالأول 🕵️‍♂️")
             return
 
         # تصفير البيانات
-        session = GameSession()
+        session = GameSession(ctx.guild.id)
         self.sessions[ctx.channel.id] = session
         session.host = ctx.author
         session.players = [ctx.author]
 
         # قراءة الإعدادات
-        txt = self.get_text()
+        txt = self.get_text(ctx.guild.id)
         title = txt.get('title', "🕵️‍♂️ لعبة برا السالفة")
         desc = txt.get('description', "واحد منكم جاسوس! والباقين يعرفون السالفة.")
         color = int(txt.get('color', '#f1c40f').replace('#', ''), 16)
@@ -88,7 +87,7 @@ class SpyGame(commands.Cog):
 
     # --- 2️⃣ بدء اللعبة ---
     async def start_game_logic(self, channel):
-        session = self.get_session(channel.id)
+        session = self.get_session(channel.id, channel.guild.id)
         if len(session.players) < 3:
             await channel.send("⚠️ لازم 3 لاعبين عالأقل!")
             return
@@ -120,14 +119,14 @@ class SpyGame(commands.Cog):
 
     # --- باقي منطق اللعبة (نفسه) ---
     async def start_classic_turn(self, channel, player):
-        session = self.get_session(channel.id)
+        session = self.get_session(channel.id, channel.guild.id)
         if not session.game_active: return
         session.current_turn = player
         view = PickVictimView(self, session, player)
         await channel.send(f"🎤 **دور {player.mention}!**\nاختار واحد تسأله 👇", view=view)
 
     async def execute_question_phase(self, channel, asker, victim):
-        session = self.get_session(channel.id)
+        session = self.get_session(channel.id, channel.guild.id)
         if not session.game_active: return
         await channel.send(f"⚔️ **تحقيق!**\n{asker.mention} 🗣️ يسأل ----> {victim.mention}\n⏳ **45 ثانية للنقاش...**")
         await asyncio.sleep(45)
@@ -136,7 +135,7 @@ class SpyGame(commands.Cog):
             await self.start_classic_turn(channel, victim)
 
     async def start_desc_round(self, channel):
-        session = self.get_session(channel.id)
+        session = self.get_session(channel.id, channel.guild.id)
         session.round_count += 1
         await channel.send(f"🌀 **الجولة رقم {session.round_count}** بدأت!")
         
@@ -166,8 +165,10 @@ class SpyGame(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.bot: return
-        session = self.get_session(message.channel.id)
+        if message.author.bot or not message.guild: return
+        if message.channel.id not in self.sessions: return
+
+        session = self.get_session(message.channel.id, message.guild.id)
         if not session.game_active: return
         if session.vote_in_progress: return
 
@@ -206,7 +207,7 @@ class SpyGame(commands.Cog):
 
     @commands.command(name="نفي", aliases=["انف"])
     async def kick_player(self, ctx, member: discord.Member):
-        session = self.get_session(ctx.channel.id)
+        session = self.get_session(ctx.channel.id, ctx.guild.id)
         if not session.game_active: return
         if ctx.author != session.host: return await ctx.send("بس المضيف يكدر يطرد! 😒")
         if member not in session.players: return

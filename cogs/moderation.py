@@ -4,12 +4,16 @@ import json
 import asyncio
 import datetime
 import os
+import sys
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.data_manager import get_guild_file
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config_path = 'data/moderation_config.json'
-        self.warnings_path = 'data/warnings.json'
+        # Paths are now dynamic per guild
         
         # 🗺️ خريطة الصلاحيات: نربط كل أمر بصلاحية الديسكورد الأصلية
         self.perm_map = {
@@ -35,9 +39,15 @@ class Moderation(commands.Cog):
 
     # --- 🛠️ أدوات مساعدة ---
     
-    def get_cmd_config(self, cmd_key):
+    def get_config_path(self, guild_id):
+        return get_guild_file(guild_id, 'moderation.json')
+
+    def get_warnings_path(self, guild_id):
+        return get_guild_file(guild_id, 'warnings.json')
+
+    def get_cmd_config(self, guild_id, cmd_key):
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
+            with open(self.get_config_path(guild_id), 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 return data.get(cmd_key, {})
         except: return {}
@@ -47,7 +57,7 @@ class Moderation(commands.Cog):
         if ctx.guild.owner_id == ctx.author.id or ctx.author.guild_permissions.administrator:
             return True
 
-        conf = self.get_cmd_config(cmd_key)
+        conf = self.get_cmd_config(ctx.guild.id, cmd_key)
         
         # 2. 📜 فحص الداتا (الرتب المخصصة):
         # إذا عنده الرتبة المذكورة بالملف، يعبر حتى لو ما عنده صلاحية ديسكورد
@@ -91,9 +101,10 @@ class Moderation(commands.Cog):
         elif time_str.isdigit(): seconds = int(time_str)
         return seconds
 
-    def add_warning(self, user_id, reason, moderator):
+    def add_warning(self, guild_id, user_id, reason, moderator):
+        path = self.get_warnings_path(guild_id)
         try:
-            with open(self.warnings_path, 'r', encoding='utf-8') as f: data = json.load(f)
+            with open(path, 'r', encoding='utf-8') as f: data = json.load(f)
         except: data = {}
         
         uid = str(user_id)
@@ -101,16 +112,16 @@ class Moderation(commands.Cog):
         warn_entry = {"reason": reason, "mod": moderator, "date": str(datetime.date.today())}
         data[uid].append(warn_entry)
         
-        with open(self.warnings_path, 'w', encoding='utf-8') as f: json.dump(data, f, indent=4)
+        with open(path, 'w', encoding='utf-8') as f: json.dump(data, f, indent=4)
         return len(data[uid])
 
     # --- 👂 الأذن السحرية ---
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.bot or not message.content: return
+        if message.author.bot or not message.content or not message.guild: return
 
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f: config = json.load(f)
+            with open(self.get_config_path(message.guild.id), 'r', encoding='utf-8') as f: config = json.load(f)
         except: return
 
         parts = message.content.split()
@@ -165,7 +176,7 @@ class Moderation(commands.Cog):
         try:
             await member.kick(reason=reason)
             msg = await ctx.send(f"🦵 **تم طرد {member.mention}** | 📝 السبب: {reason}")
-            conf = self.get_cmd_config("kick")
+            conf = self.get_cmd_config(ctx.guild.id, "kick")
             if conf.get('delete_after', 0) > 0: await msg.delete(delay=conf['delete_after'])
         except discord.Forbidden:
             await ctx.send("❌ **ما كدرت أطرده! (يمكن رتبته أعلى مني)**")
@@ -176,7 +187,7 @@ class Moderation(commands.Cog):
         try:
             await member.ban(reason=reason)
             msg = await ctx.send(f"🔨 **تم حظر {member.mention} نهائياً** | 📝 السبب: {reason}")
-            conf = self.get_cmd_config("ban")
+            conf = self.get_cmd_config(ctx.guild.id, "ban")
             if conf.get('delete_after', 0) > 0: await msg.delete(delay=conf['delete_after'])
         except discord.Forbidden:
             await ctx.send("❌ **ما كدرت أحظره! (رتبته عالية؟)**")
@@ -322,7 +333,7 @@ class Moderation(commands.Cog):
     @commands.command(name="warn")
     async def warn_user(self, ctx, member: discord.Member, *, reason="مخالفة قوانين"):
         if not await self.check_auth(ctx, "warn"): return
-        count = self.add_warning(member.id, reason, ctx.author.name)
+        count = self.add_warning(ctx.guild.id, member.id, reason, ctx.author.name)
         
         embed = discord.Embed(title="⚠️ تم تحذير العضو", color=discord.Color.gold())
         embed.add_field(name="العضو", value=member.mention)
@@ -334,7 +345,7 @@ class Moderation(commands.Cog):
     async def show_warnings(self, ctx, member: discord.Member):
         if not await self.check_auth(ctx, "warns"): return
         try:
-            with open(self.warnings_path, 'r', encoding='utf-8') as f: data = json.load(f)
+            with open(self.get_warnings_path(ctx.guild.id), 'r', encoding='utf-8') as f: data = json.load(f)
         except: data = {}
         warns = data.get(str(member.id), [])
         if not warns: return await ctx.send(f"✅ **{member.display_name}** نظيف! ما عنده ولا تحذير.")
