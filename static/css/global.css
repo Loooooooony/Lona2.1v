@@ -1,0 +1,194 @@
+:root {
+    /* Theme A: Midnight Lona (Default) */
+    --bg-base: #050507;
+    --bg-glass: rgba(20, 20, 23, 0.7);
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --text-main: #ffffff;
+    --text-muted: #8a8a93;
+    --accent-primary: #00f3ff; /* Neon Cyan */
+    --accent-secondary: #bc13fe; /* Electric Purple */
+    --accent-danger: #ff4d4d;
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --font-main: 'Cairo', sans-serif;
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
+    --scrollbar-track: #050507;
+    --scrollbar-thumb: #bc13fe;
+}
+
+[data-theme="pink"] {
+    /* Theme B: Lona Pink */
+    --bg-base: #fff0f5; /* Pastel Pink/White */
+    --bg-glass: rgba(255, 255, 255, 0.6);
+    --border-glass: rgba(255, 255, 255, 0.4);
+    --text-main: #2d2d2d;
+    --text-muted: #666666;
+    --accent-primary: #ec4899; /* Hot Pink */
+    --accent-secondary: #f472b6; /* Rose Gold */
+    --accent-danger: #ff4d4d;
+    --shadow-glass: 0 8px 32px 0 rgba(236, 72, 153, 0.15);
+    --scrollbar-track: #fff0f5;
+    --scrollbar-thumb: #ec4899;
+}
+
+body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    font-family: var(--font-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    /* Subtle Grid Background */
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.05) 0%, transparent 25%),
+        radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.05) 0%, transparent 25%);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+/* Glassmorphism Utilities */
+.lona-glass {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-glass);
+    box-shadow: var(--shadow-glass);
+    border-radius: 20px;
+}
+
+.lona-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 25px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.lona-card:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+    border-color: var(--accent-primary);
+}
+
+/* 3D Holographic Card Effect */
+.holo-card {
+    perspective: 1000px;
+    transition: transform 0.1s;
+}
+
+/* Buttons */
+.lona-btn-primary {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+.lona-btn-primary:hover {
+    filter: brightness(1.15);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    color: #fff;
+}
+
+.lona-btn-danger {
+    background: rgba(255, 77, 77, 0.1);
+    border: 1px solid var(--accent-danger);
+    color: var(--accent-danger);
+    padding: 10px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.lona-btn-danger:hover {
+    background: var(--accent-danger);
+    color: #fff;
+}
+
+/* Inputs */
+.lona-input {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--text-main);
+    border-radius: 12px;
+    padding: 12px 15px;
+    width: 100%;
+    outline: none;
+    transition: 0.2s;
+}
+.lona-input:focus {
+    border-color: var(--accent-primary);
+    background: rgba(255,255,255,0.1);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+/* Toggle Switch (iOS Style) */
+.lona-toggle {
+    appearance: none;
+    width: 50px;
+    height: 28px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50px;
+    position: relative;
+    cursor: pointer;
+    transition: 0.3s;
+    border: 1px solid var(--border-glass);
+}
+.lona-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.lona-toggle:checked {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+.lona-toggle:checked::after {
+    left: calc(100% - 24px);
+}
+
+/* Sidebar Specifics */
+.sidebar-glass {
+    background: rgba(12, 12, 14, 0.85);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-glass);
+}
+[data-theme="pink"] .sidebar-glass {
+    background: rgba(255, 255, 255, 0.7);
+    border-right: 1px solid rgba(255,255,255,0.6);
+}
+
+/* Animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+.lona-float { animation: float 4s ease-in-out infinite; }
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 243, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 243, 255, 0); }
+}
+.lona-pulse { animation: pulse-glow 2s infinite; }

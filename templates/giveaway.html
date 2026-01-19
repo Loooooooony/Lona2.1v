@@ -1,378 +1,171 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="midnight">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lona Giveaways 👑</title>
+    <title>نظام القيف اوي 🎁 | LonaBot</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="/static/mobile-style.css" rel="stylesheet">
+    <link href="/static/css/global.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        .main-content {
+            margin-right: var(--sidebar-width);
+            padding: 30px;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @media (max-width: 992px) {
+            .main-content { margin-right: 0; }
+        }
+    </style>
 </head>
 <body>
 
-    {% include 'sidebar.html' %}
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+    {% include 'sidebar_frag.html' %}
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900;"></div>
 
     <div class="main-content">
         
-        <style>
-            :root {
-                --bg-dark: #050507;
-                --glass-bg: rgba(20, 20, 23, 0.7);
-                --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-                --accent: #ffb7c5;
-                --neon-cyan: #00f3ff;
-                --neon-purple: #bc13fe;
-                --neon-red: #ff4d4d;
-                --text-main: #ffffff;
-                --text-muted: #8a8a93;
-                --sidebar-width: 280px;
-                --sidebar-collapsed-width: 80px;
-            }
-
-            body {
-                background-color: var(--bg-dark);
-                color: var(--text-main);
-                font-family: 'Cairo', sans-serif;
-                overflow-x: hidden;
-                background-image: 
-                    radial-gradient(circle at 10% 20%, rgba(188, 19, 254, 0.05) 0%, transparent 25%),
-                    radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.05) 0%, transparent 25%);
-                min-height: 100vh;
-                transition: all 0.3s ease;
-            }
-
-            /* --- إصلاح الألوان والنصوص (مهم جداً) --- */
-            h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 { color: #fff !important; }
-            label, .form-label { color: var(--text-muted) !important; font-weight: 600; margin-bottom: 8px; }
-            
-            /* الحقول والمدخلات (تمنع النص الأسود) */
-            .form-control, .form-select {
-                background: rgba(0, 0, 0, 0.4) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                color: #fff !important;
-                border-radius: 12px; padding: 12px;
-            }
-            .form-control:focus, .form-select:focus {
-                background: rgba(0, 0, 0, 0.6) !important;
-                border-color: var(--accent) !important;
-                box-shadow: 0 0 15px rgba(255, 183, 197, 0.1);
-                color: #fff !important;
-            }
-            .form-control::placeholder { color: rgba(255, 255, 255, 0.3); }
-
-            /* --- Sidebar Style (نفس الموجود بالإعدادات) --- */
-            .sidebar {
-                width: var(--sidebar-width); height: 100vh;
-                background: rgba(12, 12, 14, 0.95);
-                backdrop-filter: blur(20px);
-                border-left: var(--glass-border);
-                position: fixed; top: 0; right: 0;
-                padding: 20px 15px; z-index: 1000;
-                display: flex; flex-direction: column;
-                overflow-y: auto; overflow-x: hidden;
-                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .sidebar::-webkit-scrollbar { width: 5px; }
-            .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
-
-            /* وضع الطي */
-            body.collapsed-mode .sidebar { width: var(--sidebar-collapsed-width); padding: 20px 10px; }
-            body.collapsed-mode .main-content { margin-right: var(--sidebar-collapsed-width); }
-            body.collapsed-mode .brand-text, 
-            body.collapsed-mode .nav-link span,
-            body.collapsed-mode .nav-header,
-            body.collapsed-mode .brand-box small { display: none !important; }
-            body.collapsed-mode .brand-box { padding: 10px 5px; background: transparent; border: none; }
-            body.collapsed-mode .nav-link { justify-content: center; padding: 12px; }
-            body.collapsed-mode .nav-link i { margin: 0; font-size: 1.3rem; }
-            .d-collapsed-block { display: none; }
-            body.collapsed-mode .d-collapsed-block { display: block; margin: 0 auto; }
-
-            .brand-box {
-                padding: 15px; background: linear-gradient(135deg, rgba(255,183,197,0.1), transparent);
-                border-radius: 15px; border: var(--glass-border);
-                text-align: center; margin-bottom: 20px; white-space: nowrap;
-            }
-            .brand-text { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin: 0; }
-
-            .nav-header {
-                font-size: 0.75rem; color: #666; margin: 15px 10px 5px; 
-                font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-                border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; white-space: nowrap;
-            }
-
-            .nav-link {
-                display: flex; align-items: center; padding: 10px 15px;
-                color: var(--text-muted); text-decoration: none;
-                border-radius: 10px; margin-bottom: 4px; font-size: 0.9rem;
-                font-weight: 600; transition: all 0.2s;
-                border-right: 3px solid transparent; cursor: pointer; white-space: nowrap;
-            }
-            .nav-link:hover, .nav-link.active {
-                background: rgba(255, 255, 255, 0.05);
-                color: var(--text-main); border-right-color: var(--accent);
-                transform: translateX(-5px);
-            }
-            body.collapsed-mode .nav-link:hover, body.collapsed-mode .nav-link.active { transform: none; background: rgba(255, 255, 255, 0.1); }
-            .nav-link i { width: 25px; font-size: 1rem; text-align: center; margin-left: 10px; }
-            .nav-link.locked { color: var(--neon-red); opacity: 0.8; }
-
-            /* المحتوى الرئيسي */
-            .main-content { margin-right: var(--sidebar-width); padding: 30px; transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-
-            .sidebar-toggler {
-                background: transparent; border: 1px solid rgba(255,255,255,0.2);
-                color: #fff; border-radius: 8px; width: 40px; height: 40px;
-                transition: 0.2s; cursor: pointer; display: none; margin-left: 15px;
-            }
-            .sidebar-toggler:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
-
-            /* --- 2. ستايلات القيف اوي الخاصة --- */
-            .glass-panel {
-                background: var(--glass-bg); border: var(--glass-border);
-                border-radius: 20px; padding: 25px; margin-bottom: 20px;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            }
-            
-            .section-title {
-                font-size: 1.1rem; font-weight: 700; color: var(--accent);
-                margin-bottom: 20px; padding-bottom: 10px;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
-            }
-
-            /* معاينة الديسكورد المتطورة */
-            .discord-embed {
-                background: #2f3136; border-left: 4px solid var(--accent);
-                border-radius: 4px; padding: 15px; max-width: 100%;
-                display: flex; flex-direction: column; gap: 8px;
-            }
-            .embed-author { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: #fff; }
-            .embed-title { font-weight: bold; color: #fff; font-size: 1rem; margin: 0; }
-            .embed-desc { color: #dcddde; font-size: 0.9rem; white-space: pre-wrap; line-height: 1.4; }
-            
-            /* صور المعاينة */
-            .embed-image { width: 100%; border-radius: 4px; margin-top: 5px; display: none; object-fit: cover; max-height: 250px; }
-            .embed-thumb { width: 60px; height: 60px; border-radius: 4px; object-fit: cover; float: left; margin-left: 10px; display: none; }
-            .embed-footer { font-size: 0.75rem; color: #72767d; margin-top: 5px; }
-
-            /* جدول القيفات النشطة */
-            .table-custom { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-            .table-custom td { background: rgba(255,255,255,0.03); padding: 15px; vertical-align: middle; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); color: #fff; }
-            .table-custom tr td:first-child { border-right: 1px solid rgba(255,255,255,0.05); border-top-right-radius: 15px; border-bottom-right-radius: 15px; }
-            .table-custom tr td:last-child { border-left: 1px solid rgba(255,255,255,0.05); border-top-left-radius: 15px; border-bottom-left-radius: 15px; }
-
-            /* زر الحفظ */
-            .btn-save {
-                background: linear-gradient(45deg, var(--accent), #ff8fa3);
-                color: #000; border: none; font-weight: 800; padding: 15px;
-                border-radius: 15px; width: 100%; transition: 0.3s;
-            }
-            .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(255, 183, 197, 0.3); }
-
-            /* التجاوب */
-            @media (min-width: 993px) { .sidebar-toggler { display: inline-block; } .mobile-toggler { display: none; } }
-            @media (max-width: 992px) {
-                .sidebar { transform: translateX(100%); width: 280px !important; }
-                .sidebar.active { transform: translateX(0); }
-                .main-content { margin-right: 0 !important; padding: 20px; }
-                body.collapsed-mode .brand-text, body.collapsed-mode .nav-link span, body.collapsed-mode .nav-header { display: block !important; }
-                body.collapsed-mode .nav-link { justify-content: flex-start; }
-            }
-        </style>
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-5">
             <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-dark mobile-toggler me-3 shadow-sm" onclick="toggleMobileSidebar()" style="border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-bars"></i></button>
-                <button class="sidebar-toggler" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-                
+                <button class="lona-btn-primary d-lg-none" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
                 <div>
-                    <h3 class="fw-bold m-0 text-white">إدارة القيف اوي الشاملة <span style="color: var(--accent);">🎁</span></h3>
-                    <p class="text-muted m-0 small">أنشئ سحوبات احترافية مع شروط متقدمة.</p>
+                    <h3 class="fw-bold m-0" style="color: #ffc107;">GIVEAWAY SYSTEM 🎁</h3>
+                    <p class="text-muted m-0 small">Create and manage giveaways.</p>
                 </div>
             </div>
         </div>
 
-        {% if success %}
-        <div class="alert alert-success d-flex align-items-center gap-2 mb-4" style="background: rgba(25, 135, 84, 0.2); border: 1px solid rgba(25, 135, 84, 0.4); color: #75b798;">
-            <i class="fas fa-check-circle"></i> {{ success }}
-        </div>
-        {% endif %}
+        <div class="row g-4">
 
-        <form method="POST" enctype="multipart/form-data" action="/dashboard/{{ guild.id }}/giveaway">
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    
-                    <div class="glass-panel">
-                        <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: var(--accent); border-color: rgba(255,255,255,0.1) !important;">
-                            <i class="fas fa-edit"></i> البيانات الأساسية
-                        </h5>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label>عنوان الجائزة</label>
-                                <input type="text" name="prize" id="in-prize" class="form-control" value="{{ config.prize }}" required>
+            <!-- Create Form -->
+            <div class="col-lg-7">
+                <div class="lona-card h-100">
+                    <h5 class="fw-bold mb-4">إنشاء قيف اوي جديد</h5>
+                    <form method="POST" action="/dashboard/{{ guild.id }}/giveaway">
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="small text-muted mb-1">الجائزة</label>
+                                <input type="text" name="prize" class="lona-input" required placeholder="نيترو جيمنج...">
                             </div>
-                            <div class="col-md-6">
-                                <label>المدة الزمنية</label>
-                                <div class="input-group">
-                                    <input type="number" name="time_val" class="form-control" value="{{ config.time_val or 1 }}">
-                                    <select name="time_unit" class="form-select" style="max-width: 80px;">
-                                        <option value="s" {% if config.time_unit == 's' %}selected{% endif %}>ث</option>
-                                        <option value="m" {% if config.time_unit == 'm' %}selected{% endif %}>د</option>
-                                        <option value="h" {% if config.time_unit == 'h' %}selected{% endif %}>س</option>
-                                        <option value="d" {% if config.time_unit == 'd' %}selected{% endif %}>ي</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label>عدد الفائزين</label>
-                                <input type="number" name="winners" class="form-control" value="{{ config.winners or 1 }}">
-                            </div>
-                            <div class="col-12">
-                                <label>الوصف</label>
-                                <textarea name="description" id="in-desc" class="form-control" rows="3">{{ config.description }}</textarea>
+                            <div class="col-md-4">
+                                <label class="small text-muted mb-1">عدد الفائزين</label>
+                                <input type="number" name="winners" class="lona-input" value="{{ config.winners or 1 }}">
                             </div>
                         </div>
-                    </div>
 
-                    <div class="glass-panel">
-                        <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: var(--neon-cyan); border-color: rgba(255,255,255,0.1) !important;">
-                            <i class="fas fa-images"></i> الصور والمظهر
-                        </h5>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label>لون الجانب</label>
-                                <input type="color" name="color" id="in-color" class="form-control form-control-color w-100" value="{{ config.color or '#ffb7c5' }}" style="height: 48px;">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <label class="small text-muted mb-1">الوقت</label>
+                                <input type="number" name="time_val" class="lona-input" value="{{ config.time_val or 24 }}">
                             </div>
-                            <div class="col-md-6">
-                                <label>نوع المنشن</label>
-                                <select name="ping_type" class="form-select">
-                                    <option value="none">بدون منشن</option>
-                                    <option value="here" {% if config.ping_type == 'here' %}selected{% endif %}>@here</option>
-                                    <option value="everyone" {% if config.ping_type == 'everyone' %}selected{% endif %}>@everyone</option>
+                            <div class="col-6">
+                                <label class="small text-muted mb-1">الوحدة</label>
+                                <select name="time_unit" class="lona-input">
+                                    <option value="s" {% if config.time_unit == 's' %}selected{% endif %}>ثانية</option>
+                                    <option value="m" {% if config.time_unit == 'm' %}selected{% endif %}>دقيقة</option>
+                                    <option value="h" {% if config.time_unit == 'h' %}selected{% endif %}>ساعة</option>
+                                    <option value="d" {% if config.time_unit == 'd' %}selected{% endif %}>يوم</option>
                                 </select>
                             </div>
-
-                            <div class="col-md-6">
-                                <label><i class="fas fa-image"></i> صورة كبيرة (رفع ملف)</label>
-                                <input type="file" name="image_file" class="form-control" accept="image/*" onchange="previewImage(this, 'preview-img-main')">
-                            </div>
-                            <div class="col-md-6">
-                                <label><i class="fas fa-portrait"></i> صورة مصغرة (رفع ملف)</label>
-                                <input type="file" name="thumbnail_file" class="form-control" accept="image/*" onchange="previewImage(this, 'preview-thumb')">
-                            </div>
-
-                            <div class="col-12">
-                                <label>ID القناة (اختياري)</label>
-                                <input type="text" name="channel_id" class="form-control" value="{{ config.channel_id }}" placeholder="اتركه فارغ للنشر بنفس القناة">
-                            </div>
                         </div>
-                    </div>
 
-                    <div class="glass-panel">
-                        <h5 class="fw-bold mb-4 border-bottom pb-2" style="color: var(--neon-red); border-color: rgba(255,255,255,0.1) !important;">
-                            <i class="fas fa-shield-alt"></i> الشروط والقيود
-                        </h5>
-                        <div class="row g-3">
-                            <div class="col-md-6"><label>🔒 رتبة مطلوبة (Role ID)</label><input type="text" name="req_role_id" class="form-control" value="{{ config.req_role_id }}"></div>
-                            <div class="col-md-6"><label>🚫 رتبة ممنوعة (Blacklist)</label><input type="text" name="blacklist_role_id" class="form-control" value="{{ config.blacklist_role_id }}"></div>
-                            <div class="col-md-6"><label>🌟 رتبة تجاوز (VIP Bypass)</label><input type="text" name="bypass_role_id" class="form-control" value="{{ config.bypass_role_id }}"></div>
-                            <div class="col-md-6"><label>🎙️ مدة الفويس (دقيقة)</label><input type="number" name="req_voice_minutes" class="form-control" value="{{ config.req_voice_minutes or 0 }}" placeholder="0 = غير مطلوب"></div>
-                            <div class="col-md-6"><label>👶 عمر الحساب (يوم)</label><input type="number" name="min_account_age" class="form-control" value="{{ config.min_account_age }}"></div>
-                            <div class="col-md-6"><label>🚪 مدة السيرفر (يوم)</label><input type="number" name="min_server_age" class="form-control" value="{{ config.min_server_age }}"></div>
+                        <div class="mb-3">
+                            <label class="small text-muted mb-1">القناة</label>
+                            <input type="text" name="channel_id" class="lona-input" value="{{ config.channel_id }}" placeholder="Channel ID">
                         </div>
-                    </div>
-                </div>
 
-                <div class="col-lg-4">
-                    <div class="glass-panel sticky-top" style="top: 20px;">
-                        <h5 class="fw-bold mb-3">معاينة (Live Preview)</h5>
-                        
-                        <div class="discord-embed position-relative" id="preview-embed">
-                            
-                            <div class="d-flex align-items-start">
-                                <img src="" id="preview-thumb" class="embed-thumb" style="display:none; width: 60px; height: 60px; border-radius: 4px; object-fit: cover; margin-left: 10px;">
-                                <div class="w-100">
-                                    <div class="embed-author">
-                                        <i class="fas fa-gift text-warning"></i> Lona Giveaways
+                        <hr class="border-secondary opacity-25">
+
+                        <div class="accordion mb-4" id="advOpts">
+                            <div class="accordion-item bg-transparent border-0">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed bg-transparent text-white shadow-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdv">
+                                        <i class="fas fa-cog me-2"></i> خيارات متقدمة
+                                    </button>
+                                </h2>
+                                <div id="collapseAdv" class="accordion-collapse collapse">
+                                    <div class="accordion-body px-0">
+                                        <div class="mb-3">
+                                            <label class="small text-muted mb-1">رتبة مطلوبة</label>
+                                            <input type="text" name="req_role_id" class="lona-input" value="{{ config.req_role_id }}" placeholder="Role ID">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="small text-muted mb-1">صورة</label>
+                                            <input type="text" name="image_url" class="lona-input" value="{{ config.image_url }}" placeholder="https://...">
+                                        </div>
                                     </div>
-                                    <div class="embed-title mt-2" id="out-prize">الجائزة</div>
-                                    <div class="embed-desc mt-1" id="out-desc">الوصف...</div>
                                 </div>
                             </div>
-                            
-                            <img src="" id="preview-img-main" class="embed-image" style="display:none; width: 100%; border-radius: 4px; margin-top: 10px; object-fit: cover;">
+                        </div>
 
-                            <div class="embed-footer mt-2">
-                                <span>⏰ ينتهي: بعد قليل</span> • <span>👑 المستضيف: Lona</span>
+                        <button type="submit" class="lona-btn-primary w-100" id="createBtn">
+                            <i class="fas fa-rocket me-2"></i> إنشاء ونشر
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+
+            <!-- Active Giveaways -->
+            <div class="col-lg-5">
+                <div class="lona-card h-100">
+                    <h5 class="fw-bold mb-4">القيف اويات النشطة</h5>
+
+                    <div style="max-height: 500px; overflow-y: auto;">
+                        {% if active_list %}
+                            {% for g in active_list %}
+                            <div class="lona-card p-3 mb-3" style="border-left: 4px solid #ffc107;">
+                                <h6 class="fw-bold text-white mb-1">{{ g.prize }}</h6>
+                                <div class="d-flex justify-content-between small text-muted mb-2">
+                                    <span><i class="fas fa-users"></i> {{ g.participants }} مشارك</span>
+                                    <span><i class="fas fa-clock"></i> {{ g.end_time }}</span>
+                                </div>
+                                <form method="POST" action="/dashboard/{{ guild.id }}/giveaway">
+                                    <input type="hidden" name="target_id" value="{{ g.id }}">
+                                    <button type="submit" name="action" value="end_now" class="btn btn-sm btn-outline-danger w-100">
+                                        إنهاء الآن
+                                    </button>
+                                </form>
                             </div>
-                        </div>
-                        
-                        <div class="mt-4 d-grid">
-                            <button type="submit" name="action" value="save" class="btn btn-save">
-                                <i class="fas fa-save me-2"></i> حفظ الإعدادات
-                            </button>
-                        </div>
-                        <div class="text-center mt-2 small text-muted">للنشر: <code>!gstart</code></div>
-                        
-                        <div class="mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.1) !important;">
-                            <h6 class="text-muted small mb-2">القيفات النشطة</h6>
-                            {% if active_list %}
-                                {% for item in active_list %}
-                                <div class="bg-dark p-2 rounded mb-2 d-flex justify-content-between align-items-center border border-secondary">
-                                    <div class="small text-white">{{ item.prize }}</div>
-                                    <form method="POST" action="/dashboard/{{ guild.id }}/giveaway"><input type="hidden" name="target_id" value="{{ item.id }}">
-                                    <button type="submit" name="action" value="end_now" class="btn btn-danger btn-sm py-0" style="font-size: 0.7rem;">إنهاء</button></form>
-          </div>
-                                {% endfor %}
-                            {% else %}<div class="text-center small text-muted">لا يوجد</div>{% endif %}
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-gift fa-3x mb-3 opacity-25"></i>
+                                <p>لا يوجد قيف اوي نشط.</p>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-        </form>
 
-        <script>
-            // Live Preview Text
-            const inPrize = document.getElementById('in-prize');
-            const inDesc = document.getElementById('in-desc');
-            const inColor = document.getElementById('in-color');
-            const embed = document.getElementById('preview-embed');
-            
-            function updatePreview() {
-                document.getElementById('out-prize').innerText = inPrize.value || 'الجائزة';
-                document.getElementById('out-desc').innerText = inDesc.value || 'الوصف...';
-                embed.style.borderLeftColor = inColor.value;
-            }
-            [inPrize, inDesc, inColor].forEach(el => el.addEventListener('input', updatePreview));
-            updatePreview();
+        </div>
 
-            // 🔥 دالة معاينة الصور من الجهاز (File Reader) 🔥
-            function previewImage(input, imgId) {
-                var preview = document.getElementById(imgId);
-                if (input.files && input.files[0]) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.src = e.target.result;
-                        preview.style.display = 'block'; // اظهر الصورة
-                    }
-                    reader.readAsDataURL(input.files[0]);
-                } else {
-                    preview.style.display = 'none'; // اخفيها
-                }
-            }
-
-            // Sidebar Toggle
-            function toggleSidebar() {
-                document.body.classList.toggle('collapsed-mode');
-                localStorage.setItem('sidebarState', document.body.classList.contains('collapsed-mode') ? 'collapsed' : 'expanded');
-            }
-            if(localStorage.getItem('sidebarState') === 'collapsed') document.body.classList.add('collapsed-mode');
-        </script>
     </div>
-    
+
+    <script src="/static/js/lona-logic.js"></script>
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+        }
+
+        // Confetti on load
+        document.addEventListener('DOMContentLoaded', () => {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ffc107', '#ff4d4d', '#00f3ff']
+            });
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/mobile-script.js"></script>
 </body>
 </html>

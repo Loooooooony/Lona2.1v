@@ -1,119 +1,130 @@
-<script src="https://unpkg.com/htmx.org@1.9.6"></script>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="midnight">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ guild.name }} | مركز القيادة</title>
 
-<style>
-    /* تنسيق الفوتر (الأزرار الجوة) */
-    .sidebar-footer {
-        margin-top: auto; padding-top: 15px; 
-        border-top: 1px solid rgba(255,255,255,0.1);
-        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
-    }
-    body.collapsed-mode .sidebar-footer { display: flex; flex-direction: column; }
-
-    /* شكل الأزرار */
-    .control-btn {
-        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);
-        color: #aaa; padding: 10px; border-radius: 12px; font-size: 1rem; 
-        cursor: pointer; transition: all 0.2s ease; display: flex; 
-        align-items: center; justify-content: center;
-    }
-    .control-btn:hover { 
-        background: var(--accent, #ffb7c5); color: #000; 
-        transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
-    .btn-danger-custom:hover { 
-        background: var(--neon-red, #ff4d4d) !important; color: #fff !important; 
-        border-color: var(--neon-red, #ff4d4d);
-    }
-</style>
-
-<div class="sidebar" id="sidebar" hx-boost="true" hx-target=".main-content" hx-select=".main-content" hx-swap="outerHTML show:top">
+    <!-- Frameworks -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     
-    <div class="brand-box">
-        <p class="brand-text"><i class="fas fa-satellite-dish"></i> LONA PANEL</p>
-        <small style="color: var(--text-muted);">{{ guild.name }}</small>
-        {% if guild and guild.icon %}
-        <img src="{{ guild.icon.url }}" style="width: 40px; height: 40px; border-radius: 50%; margin-top: 5px;">
+    <!-- Lona System -->
+    <link href="/static/css/global.css" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .main-content {
+            margin-right: var(--sidebar-width);
+            padding: 30px;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @media (max-width: 992px) {
+            .main-content { margin-right: 0; }
+        }
+
+        /* Stat Icon Wrapper */
+        .stat-icon {
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* Rank Badge */
+        .rank-badge {
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    {% include 'sidebar_frag.html' %}
+
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900;"></div>
+
+    <div class="main-content">
+        {% if content_template %}
+            {% include content_template %}
+        {% else %}
+            {% include 'index.html' %}
         {% endif %}
-        <i class="fas fa-robot fa-2x text-white d-collapsed-block mt-2"></i>
     </div>
-    
-    <a href="/dashboard/{{ guild.id }}" class="nav-link"><i class="fas fa-th-large"></i> <span>مركز القيادة</span></a>
 
-    <div class="nav-header">الألعاب والترفيه</div>
-    <a href="/dashboard/{{ guild.id }}/game_studio" class="nav-link"><i class="fas fa-palette"></i> <span>استوديو الألعاب</span></a>
-    <a href="/dashboard/{{ guild.id }}/games" class="nav-link"><i class="fas fa-gamepad"></i> <span>إدارة الألعاب</span></a>
-    <a href="/dashboard/{{ guild.id }}/roulette_control" class="nav-link"><i class="fas fa-skull-crossbones"></i> <span>الروليت الملكي</span></a>
-    <!-- Confessions are global for now, or per guild? Assuming global logic but routed through guild context to keep sidebar -->
-    <a href="/confessions" class="nav-link"><i class="fas fa-envelope-open-text"></i> <span>الاعترافات (Global)</span></a>
+    <script src="/static/js/lona-logic.js"></script>
+    <script>
+        // Toggle Sidebar Logic
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+        }
 
-    <div class="nav-header">الإدارة والحماية</div>
-    <a href="/dashboard/{{ guild.id }}/moderation" class="nav-link"><i class="fas fa-user-shield"></i> <span>التحكم والمشرفين</span></a>
-    <a href="/dashboard/{{ guild.id }}/logger_settings" class="nav-link"><i class="fas fa-clipboard-list"></i> <span>سجلات المراقبة</span></a>
-    <a href="/dashboard/{{ guild.id }}/welcome" class="nav-link"><i class="fas fa-paint-brush"></i> <span>استوديو الترحيب</span></a>
+        // Chart Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const ctx = document.getElementById('mainChart');
+            if(ctx && typeof Chart !== 'undefined' && {{ graph_data|tojson|safe if graph_data else 'null' }}) {
+                Chart.defaults.color = '#8a8a93';
+                Chart.defaults.font.family = "'Cairo', sans-serif";
+                Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
 
-    <div class="nav-header">ذكاء البوت</div>
-    <a href="/dashboard/{{ guild.id }}/settings" class="nav-link"><i class="fas fa-robot"></i> <span>هوية البوت</span></a>
-    <a href="/dashboard/{{ guild.id }}/auto_reply" class="nav-link"><i class="fas fa-brain"></i> <span>الرد التلقائي</span></a>
-    <a href="/commands" class="nav-link"><i class="fas fa-list-alt"></i> <span>دليل الأوامر (Global)</span></a>
+                const chartCtx = ctx.getContext('2d');
+                let gradMsg = chartCtx.createLinearGradient(0, 0, 0, 400);
+                gradMsg.addColorStop(0, 'rgba(188, 19, 254, 0.5)');
+                gradMsg.addColorStop(1, 'rgba(188, 19, 254, 0)');
 
-    <div class="nav-header">الخدمات والنشر</div>
-    <a href="/dashboard/{{ guild.id }}/islamic" class="nav-link"><i class="fas fa-mosque"></i> <span>المركز الإسلامي</span></a>
-    <a href="/dashboard/{{ guild.id }}/broadcast" class="nav-link"><i class="fas fa-bullhorn"></i> <span>المذيع الآلي</span></a>
-    <a href="/dashboard/{{ guild.id }}/giveaway" class="nav-link"><i class="fas fa-gift"></i> <span>نظام القيف اوي</span></a>
-    <a href="/dashboard/{{ guild.id }}/live_chat" class="nav-link"><i class="fas fa-comments"></i> <span>غرفة العمليات (Live)</span></a>
-
-    <div class="nav-header">منطقة الخطر</div>
-    <a href="#" class="nav-link locked" data-bs-toggle="modal" data-bs-target="#loginModal">
-        <i class="fas fa-code"></i> <span>المحرر الشامل 🔐</span>
-    </a>
-
-    <a href="/" class="nav-link" style="margin-top: 20px; color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> <span>تغيير السيرفر</span></a>
-
-    <div class="sidebar-footer">
-        <form action="/reload" method="post" style="display:contents">
-            <button type="submit" class="control-btn" title="تحديث الملفات"><i class="fas fa-sync"></i></button>
-        </form>
-        <form action="/change_status" method="post" style="display:contents">
-            <button type="submit" class="control-btn" title="تغيير الحالة"><i class="fas fa-music"></i></button>
-        </form>
-        <form action="/kill_switch" method="post" style="display:contents" onsubmit="return confirm('⚠️ متأكد تريد تسوي ريستارت للبوت؟');">
-            <button type="submit" class="control-btn btn-danger-custom" title="إعادة تشغيل النظام"><i class="fas fa-power-off"></i></button>
-        </form>
-    </div>
-</div>
-
-<script>
-    // هذه الدالة تتفحص الرابط وتخلي الزر يضوي
-    function updateActiveLink() {
-        var currentPath = window.location.pathname;
-        var links = document.querySelectorAll('.sidebar .nav-link');
-        
-        links.forEach(function(link) {
-            // 1. طفي الوهج من الكل
-            link.classList.remove('active');
-            
-            // 2. شوفي اذا رابط هذا الزر يطابق الصفحة الحالية
-            if(link.getAttribute('href') === currentPath) {
-                link.classList.add('active');
+                new Chart(chartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ graph_data.labels | tojson if graph_data else '[]' }},
+                        datasets: [
+                            {
+                                label: 'Messages',
+                                data: {{ graph_data.messages | tojson if graph_data else '[]' }},
+                                borderColor: '#bc13fe',
+                                backgroundColor: gradMsg,
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#bc13fe',
+                                pointBorderColor: '#fff',
+                                pointRadius: 4
+                            },
+                            {
+                                label: 'Joins',
+                                data: {{ graph_data.joins | tojson if graph_data else '[]' }},
+                                borderColor: '#00f3ff',
+                                backgroundColor: 'transparent',
+                                borderDash: [5, 5],
+                                tension: 0.3,
+                                pointRadius: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { usePointStyle: true } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
             }
         });
-    }
+    </script>
 
-    // شغل الدالة اول ما يفتح الموقع
-    updateActiveLink();
-
-    // شغل الدالة كل ما HTMX يغير الصفحة (التنقل السريع)
-    document.body.addEventListener('htmx:pushedIntoHistory', function() {
-        updateActiveLink();
-    });
-    
-    // حل احتياطي: شغله عند الضغط
-    document.querySelectorAll('.sidebar .nav-link').forEach(l => {
-        l.addEventListener('click', function() {
-            // نوخر الوهج من الكل فوراً
-            document.querySelectorAll('.sidebar .nav-link').forEach(i => i.classList.remove('active'));
-            // نضيفه للي انضغط عليه
-            this.classList.add('active');
-        });
-    });
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

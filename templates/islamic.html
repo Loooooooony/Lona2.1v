@@ -1,315 +1,121 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="midnight">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المركز الإسلامي 🕌</title>
+    <title>المركز الإسلامي 🕌 | LonaBot</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="/static/mobile-style.css" rel="stylesheet">
+    <link href="/static/css/global.css" rel="stylesheet">
+
+    <style>
+        .main-content {
+            margin-right: var(--sidebar-width);
+            padding: 30px;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @media (max-width: 992px) {
+            .main-content { margin-right: 0; }
+        }
+        
+        /* Arabesque Overlay */
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/arabesque.png');
+            opacity: 0.05; pointer-events: none; z-index: -1;
+        }
+    </style>
 </head>
 <body>
 
-{% include 'sidebar.html' %}
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+    {% include 'sidebar_frag.html' %}
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900;"></div>
 
     <div class="main-content">
-<style>
-:root {
-            --bg-dark: #050507;
-            --glass-bg: rgba(20, 20, 23, 0.7);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-            --accent: #ffb7c5;
-            --islamic-green: #00e676; /* لون خاص للقسم الإسلامي */
-            --neon-cyan: #00f3ff;
-            --neon-purple: #bc13fe;
-            --neon-red: #ff4d4d;
-            --text-main: #ffffff;
-            --text-muted: #8a8a93;
-            --sidebar-width: 280px;
-            --sidebar-collapsed-width: 80px;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Cairo', sans-serif;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 230, 118, 0.05) 0%, transparent 25%),
-                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.05) 0%, transparent 25%);
-            min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-
-        /* --- Sidebar Style --- */
-        .sidebar {
-            width: var(--sidebar-width); height: 100vh;
-            background: rgba(12, 12, 14, 0.95);
-            backdrop-filter: blur(20px);
-            border-left: var(--glass-border);
-            position: fixed; top: 0; right: 0;
-            padding: 20px 15px; z-index: 1000;
-            display: flex; flex-direction: column;
-            overflow-y: auto; overflow-x: hidden;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar::-webkit-scrollbar { width: 5px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
-
-        /* --- Collapsed Mode --- */
-        body.collapsed-mode .sidebar { width: var(--sidebar-collapsed-width); padding: 20px 10px; }
-        body.collapsed-mode .main-content { margin-right: var(--sidebar-collapsed-width); }
         
-        body.collapsed-mode .brand-text, 
-        body.collapsed-mode .nav-link span,
-        body.collapsed-mode .nav-header,
-        body.collapsed-mode .brand-box small { display: none !important; }
-        
-        body.collapsed-mode .brand-box { padding: 10px 5px; background: transparent; border: none; }
-        body.collapsed-mode .nav-link { justify-content: center; padding: 12px; }
-        body.collapsed-mode .nav-link i { margin: 0; font-size: 1.3rem; }
-        
-        .d-collapsed-block { display: none; }
-        body.collapsed-mode .d-collapsed-block { display: block; margin: 0 auto; }
-
-        .brand-box {
-            padding: 15px; background: linear-gradient(135deg, rgba(255,183,197,0.1), transparent);
-            border-radius: 15px; border: var(--glass-border);
-            text-align: center; margin-bottom: 20px; white-space: nowrap;
-        }
-        .brand-text { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin: 0; }
-
-        .nav-header {
-            font-size: 0.75rem; color: #666; margin: 15px 10px 5px; 
-            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; white-space: nowrap;
-        }
-
-        .nav-link {
-            display: flex; align-items: center; padding: 10px 15px;
-            color: var(--text-muted); text-decoration: none;
-            border-radius: 10px; margin-bottom: 4px; font-size: 0.9rem;
-            font-weight: 600; transition: all 0.2s;
-            border-right: 3px solid transparent; cursor: pointer; white-space: nowrap;
-        }
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main); border-right-color: var(--accent);
-            transform: translateX(-5px);
-        }
-        body.collapsed-mode .nav-link:hover, body.collapsed-mode .nav-link.active { transform: none; background: rgba(255, 255, 255, 0.1); }
-        .nav-link i { width: 25px; font-size: 1rem; text-align: center; margin-left: 10px; }
-        .nav-link.locked { color: var(--neon-red); opacity: 0.8; }
-
-        /* --- Main Content --- */
-        .main-content { margin-right: var(--sidebar-width); padding: 30px; transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        .sidebar-toggler {
-            background: transparent; border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; border-radius: 8px; width: 40px; height: 40px;
-            transition: 0.2s; cursor: pointer; display: none; margin-left: 15px;
-        }
-        .sidebar-toggler:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
-
-        /* --- Islamic Specific Styles --- */
-        .glass-panel {
-            background: var(--glass-bg); border: var(--glass-border);
-            border-radius: 20px; padding: 25px; height: 100%;
-            position: relative; overflow: hidden; margin-bottom: 25px;
-        }
-
-        .hijri-box {
-            background: linear-gradient(135deg, rgba(0, 230, 118, 0.2), rgba(0, 180, 100, 0.1));
-            border: 1px solid rgba(0, 230, 118, 0.3);
-            border-radius: 16px; padding: 25px; text-align: center; color: #fff; margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0, 230, 118, 0.1);
-        }
-        .hijri-date { font-size: 2rem; font-weight: 800; color: var(--islamic-green); margin-bottom: 5px; text-shadow: 0 0 20px rgba(0,230,118,0.4); }
-        .gregorian { font-size: 1rem; opacity: 0.8; letter-spacing: 1px; }
-
-        .panel-title {
-            font-size: 1.2rem; font-weight: bold; margin-bottom: 20px;
-            display: flex; align-items: center; gap: 10px; 
-            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;
-        }
-        .panel-title i { color: var(--islamic-green); }
-
-        .form-control, .form-select {
-            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff; border-radius: 12px; padding: 12px;
-        }
-        .form-control:focus, .form-select:focus {
-            background: rgba(0, 0, 0, 0.5); border-color: var(--islamic-green);
-            color: #fff; box-shadow: 0 0 15px rgba(0, 230, 118, 0.2);
-        }
-        label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; display: block; }
-
-        /* Toggles */
-        .feature-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; border-radius: 12px; margin-bottom: 10px;
-            background: rgba(255,255,255,0.03); transition: 0.2s;
-        }
-        .feature-row:hover { background: rgba(255,255,255,0.06); }
-        
-        .form-check-input {
-            width: 50px; height: 26px; background-color: #333; border-color: #555; 
-            cursor: pointer; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28255, 255, 255, 0.25%29'/%3e%3c/svg%3e");
-        }
-        .form-check-input:checked { 
-            background-color: var(--islamic-green); border-color: var(--islamic-green);
-            box-shadow: 0 0 10px rgba(0,230,118,0.5);
-        }
-
-        .btn-save {
-            background: linear-gradient(45deg, var(--islamic-green), #00b09b);
-            color: #000; font-weight: bold; border: none;
-            padding: 15px; border-radius: 15px; width: 100%; font-size: 1.1rem;
-            transition: 0.3s; margin-top: 20px;
-        }
-        .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0, 230, 118, 0.3); }
-
-        @media (min-width: 993px) {
-            .sidebar-toggler { display: inline-block; }
-            .mobile-toggler { display: none; }
-        }
-
-        @media (max-width: 992px) {
-            .sidebar { transform: translateX(100%); width: 280px !important; }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-right: 0 !important; padding: 20px; }
-            
-            body.collapsed-mode .brand-text, 
-            body.collapsed-mode .nav-link span,
-            body.collapsed-mode .nav-header { display: block !important; }
-            body.collapsed-mode .nav-link { justify-content: flex-start; }
-        }
-</style>
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-5">
             <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-dark mobile-toggler me-3 shadow-sm" onclick="toggleMobileSidebar()" style="border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-bars"></i></button>
-                <button class="sidebar-toggler" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-                
+                <button class="lona-btn-primary d-lg-none" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
                 <div>
-                    <h3 class="fw-bold m-0 text-white">المركز الإسلامي <span style="color: var(--islamic-green);">🕌</span></h3>
-                    <p class="text-muted m-0 small">التحكم في الراديو القرآني، الأذكار، والمواقيت.</p>
+                    <h3 class="fw-bold m-0" style="color: #28a745;">ISLAMIC CENTER 🕌</h3>
+                    <p class="text-muted m-0 small">Quran, Azkar, and more.</p>
                 </div>
             </div>
         </div>
 
-        <div class="hijri-box">
-            <div class="hijri-date" id="hijri-date">...</div>
-            <div class="gregorian" id="gregorian-date">...</div>
-        </div>
-
-        <form method="POST" action="/dashboard/{{ guild.id }}/islamic">
-            
-            <div class="glass-panel">
-                <div class="feature-row" style="background: transparent;">
-                    <div>
-                        <h5 style="margin:0; font-weight:bold; color: #fff;">تفعيل النظام بالكامل</h5>
-                        <small class="text-muted">تشغيل/إيقاف الراديو والأذكار لجميع السيرفرات</small>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="enabled" {% if config.enabled %}checked{% endif %}>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-4">
-                
-                <div class="col-lg-6">
-                    <div class="glass-panel h-100">
-                        <div class="panel-title"><i class="fas fa-broadcast-tower"></i> الراديو القرآني</div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="lona-card">
+                    <form method="POST" action="/dashboard/{{ guild.id }}/islamic">
                         
+                        <div class="d-flex align-items-center justify-content-between mb-4 p-3 rounded" style="background: rgba(40, 167, 69, 0.1); border: 1px solid #28a745;">
+                            <div>
+                                <div class="fw-bold text-white">تفعيل النظام الإسلامي</div>
+                                <div class="small text-muted">تشغيل إذاعة القرآن والأذكار التلقائية.</div>
+                            </div>
+                            <input class="lona-toggle" type="checkbox" name="enabled" {% if config.enabled %}checked{% endif %}>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="small text-muted mb-1">قناة الإذاعة (Voice)</label>
+                                <input type="text" name="voice_channel_id" class="lona-input" value="{{ config.voice_channel_id }}" placeholder="Voice Channel ID">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted mb-1">قناة الأذكار (Text)</label>
+                                <input type="text" name="text_channel_id" class="lona-input" value="{{ config.text_channel_id }}" placeholder="Text Channel ID">
+                            </div>
+                        </div>
+
                         <div class="mb-4">
-                            <label>القارئ المفضل (للبث المستمر)</label>
-                            <select name="reader" class="form-select">
-                                <option value="mp3quran" {% if config.reader == 'mp3quran' %}selected{% endif %}>🎙️ الإذاعة العامة (منوع)</option>
-                                <option value="abdulbasit" {% if config.reader == 'abdulbasit' %}selected{% endif %}>🎙️ عبدالباسط عبدالصمد</option>
-                                <option value="afasi" {% if config.reader == 'afasi' %}selected{% endif %}>🎙️ مشاري العفاسي</option>
-                                <option value="maher" {% if config.reader == 'maher' %}selected{% endif %}>🎙️ ماهر المعيقلي</option>
-                                <option value="sudais" {% if config.reader == 'sudais' %}selected{% endif %}>🎙️ عبدالرحمن السديس</option>
+                            <label class="small text-muted mb-1">القارئ المفضل</label>
+                            <select name="reader" class="lona-input">
+                                <option value="maher" {% if config.reader == 'maher' %}selected{% endif %}>ماهر المعيقلي</option>
+                                <option value="yasser" {% if config.reader == 'yasser' %}selected{% endif %}>ياسر الدوسري</option>
+                                <option value="sudais" {% if config.reader == 'sudais' %}selected{% endif %}>عبدالرحمن السديس</option>
+                                <option value="ajamy" {% if config.reader == 'ajamy' %}selected{% endif %}>أحمد العجمي</option>
                             </select>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label>القناة الصوتية (Voice ID)</label>
-                            <input type="number" name="voice_channel_id" class="form-control" value="{{ config.voice_channel_id }}" placeholder="مثال: 123456789...">
+
+                        <div class="lona-card p-3 mb-4" style="background: rgba(0,0,0,0.2);">
+                            <h6 class="fw-bold mb-3 text-white">الميزات الإضافية</h6>
+
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span>أذكار الصباح</span>
+                                <input class="lona-toggle" type="checkbox" name="azkar_sabah" {% if config.azkar_sabah %}checked{% endif %}>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span>أذكار المساء</span>
+                                <input class="lona-toggle" type="checkbox" name="azkar_masa" {% if config.azkar_masa %}checked{% endif %}>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span>تنبيه سورة الكهف (الجمعة)</span>
+                                <input class="lona-toggle" type="checkbox" name="friday_kahf" {% if config.friday_kahf %}checked{% endif %}>
+                            </div>
                         </div>
-                    </div>
+
+                        <button type="submit" class="lona-btn-primary w-100" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                            <i class="fas fa-save me-2"></i> حفظ الإعدادات
+                        </button>
+
+                    </form>
                 </div>
-
-                <div class="col-lg-6">
-                    <div class="glass-panel h-100">
-                        <div class="panel-title"><i class="fas fa-bell"></i> التنبيهات والأذكار</div>
-                        
-                        <div class="mb-4">
-                            <label>قناة الأذكار الكتابية (Text ID)</label>
-                            <input type="number" name="text_channel_id" class="form-control" value="{{ config.text_channel_id }}" placeholder="مثال: 987654321...">
-                        </div>
-
-                        <div class="feature-row">
-                            <span><i class="fas fa-sun text-warning me-2"></i> أذكار الصباح (8:00 ص)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="azkar_sabah" {% if config.azkar_sabah %}checked{% endif %}></div>
-                        </div>
-
-                        <div class="feature-row">
-                            <span><i class="fas fa-moon text-info me-2"></i> أذكار المساء (5:00 م)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="azkar_masa" {% if config.azkar_masa %}checked{% endif %}></div>
-                        </div>
-
-                        <div class="feature-row">
-                            <span><i class="fas fa-kaaba text-success me-2"></i> تذكير سورة الكهف (الجمعة)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="friday_kahf" {% if config.friday_kahf %}checked{% endif %}></div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
+        </div>
 
-            <button type="submit" class="btn-save"><i class="fas fa-save me-2"></i> حفظ الإعدادات</button>
-        </form>
-    
-<script>
-// دالة الطي
-        function toggleSidebar() {
-            document.body.classList.toggle('collapsed-mode');
-            if(document.body.classList.contains('collapsed-mode')) {
-                localStorage.setItem('sidebarState', 'collapsed');
-            } else {
-                localStorage.setItem('sidebarState', 'expanded');
-            }
+    </div>
+
+    <script src="/static/js/lona-logic.js"></script>
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
         }
-        document.addEventListener('DOMContentLoaded', () => {
-            if(localStorage.getItem('sidebarState') === 'collapsed') {
-                document.body.classList.add('collapsed-mode');
-            }
-        });
-
-        // التاريخ الميلادي
-        var dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('gregorian-date').innerText = new Date().toLocaleDateString('ar-IQ', dateOptions);
-        
-        // التاريخ الهجري (باستخدام Intl API)
-        try {
-            var hijri = new Intl.DateTimeFormat('ar-TN-u-ca-islamic', {
-                day: 'numeric', month: 'long', year: 'numeric', weekday: 'long'
-            }).format(Date.now());
-            document.getElementById('hijri-date').innerText = hijri;
-        } catch (e) {
-            document.getElementById('hijri-date').innerText = "التاريخ الهجري";
-        }
-</script>
-</div>
-
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script src="/static/mobile-script.js"></script>
 </body>
 </html>

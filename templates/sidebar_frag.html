@@ -1,0 +1,163 @@
+<div class="sidebar sidebar-glass" id="sidebar">
+
+    <!-- Brand Box -->
+    <div class="brand-box" style="padding: 20px; text-align: center; border-bottom: 1px solid var(--border-glass);">
+        <div style="font-size: 1.5rem; font-weight: 900; margin-bottom: 5px;">
+            LONA<span style="color: var(--accent-primary);">PANEL</span>
+        </div>
+        {% if guild %}
+        <div style="color: var(--text-muted); font-size: 0.9rem;">{{ guild.name }}</div>
+        {% if guild.icon %}
+        <img src="{{ guild.icon.url }}" style="width: 50px; height: 50px; border-radius: 50%; margin-top: 10px; border: 2px solid var(--accent-secondary); padding: 2px;">
+        {% endif %}
+        {% else %}
+        <div style="color: var(--text-muted);">Select Server</div>
+        {% endif %}
+    </div>
+
+    <!-- Navigation -->
+    <div style="padding: 15px; flex-grow: 1; overflow-y: auto;">
+
+        <a href="/dashboard/{{ guild.id }}" class="nav-link" data-lang-key="dashboard">
+            <i class="fas fa-th-large" style="color: var(--accent-primary);"></i> <span data-lang-key="dashboard_title">مركز القيادة</span>
+        </a>
+
+        <div class="nav-header" style="color: var(--text-muted); font-size: 0.75rem; margin: 15px 0 5px; font-weight: bold;">GAMES & FUN</div>
+
+        <a href="/dashboard/{{ guild.id }}/game_studio" class="nav-link" data-lang-key="game_studio">
+            <i class="fas fa-palette" style="color: var(--accent-secondary);"></i> <span data-lang-key="game_studio">استوديو الألعاب</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/games" class="nav-link">
+            <i class="fas fa-gamepad" style="color: var(--accent-secondary);"></i> <span>إدارة الألعاب</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/roulette_control" class="nav-link">
+            <i class="fas fa-skull-crossbones" style="color: var(--accent-danger);"></i> <span>الروليت الملكي</span>
+        </a>
+
+        <div class="nav-header" style="color: var(--text-muted); font-size: 0.75rem; margin: 15px 0 5px; font-weight: bold;">MODERATION</div>
+
+        <a href="/dashboard/{{ guild.id }}/moderation" class="nav-link">
+            <i class="fas fa-user-shield" style="color: var(--accent-primary);"></i> <span data-lang-key="moderation">التحكم والمشرفين</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/logger_settings" class="nav-link">
+            <i class="fas fa-clipboard-list" style="color: var(--accent-primary);"></i> <span>سجلات المراقبة</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/welcome" class="nav-link">
+            <i class="fas fa-paint-brush" style="color: var(--accent-primary);"></i> <span>استوديو الترحيب</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/tickets_dashboard" class="nav-link">
+            <i class="fas fa-ticket-alt" style="color: #ffc107;"></i> <span>نظام التكتات</span>
+        </a>
+
+        <div class="nav-header" style="color: var(--text-muted); font-size: 0.75rem; margin: 15px 0 5px; font-weight: bold;">UTILITIES</div>
+
+        <a href="/dashboard/{{ guild.id }}/auto_reply" class="nav-link">
+            <i class="fas fa-brain"></i> <span>الرد التلقائي</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/broadcast" class="nav-link">
+            <i class="fas fa-bullhorn"></i> <span>المذيع الآلي</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/islamic" class="nav-link">
+            <i class="fas fa-mosque"></i> <span>المركز الإسلامي</span>
+        </a>
+        <a href="/dashboard/{{ guild.id }}/giveaway" class="nav-link">
+            <i class="fas fa-gift"></i> <span>القيف اوي</span>
+        </a>
+         <a href="/dashboard/{{ guild.id }}/settings" class="nav-link">
+            <i class="fas fa-robot"></i> <span>هوية البوت</span>
+        </a>
+
+        <div class="nav-header" style="color: var(--text-muted); font-size: 0.75rem; margin: 15px 0 5px; font-weight: bold;">DANGER ZONE</div>
+
+        <a href="#" class="nav-link locked" data-bs-toggle="modal" data-bs-target="#loginModal" style="color: var(--accent-danger);">
+            <i class="fas fa-code"></i> <span>المحرر الشامل 🔐</span>
+        </a>
+        <a href="/" class="nav-link" style="color: var(--accent-danger);">
+            <i class="fas fa-sign-out-alt"></i> <span>تغيير السيرفر</span>
+        </a>
+
+    </div>
+
+    <!-- Sidebar Footer (Theme/Lang/Power) -->
+    <div class="sidebar-footer" style="padding: 15px; border-top: 1px solid var(--border-glass); display: flex; gap: 10px; justify-content: center;">
+        <button id="theme-toggle-btn-sidebar" class="control-btn" title="Theme" onclick="LonaLogic.toggleTheme()">
+            <i class="fas fa-moon"></i>
+        </button>
+        <button id="lang-toggle-btn-sidebar" class="control-btn" title="Language" onclick="LonaLogic.toggleLang()">
+            <i class="fas fa-globe"></i>
+        </button>
+        <form action="/reload" method="post" style="display:contents">
+            <button type="submit" class="control-btn" title="Reload"><i class="fas fa-sync"></i></button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        color: var(--text-muted);
+        text-decoration: none;
+        border-radius: 12px;
+        margin-bottom: 5px;
+        transition: all 0.2s;
+    }
+    .nav-link:hover, .nav-link.active {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-main);
+        transform: translateX(5px);
+    }
+    .nav-link i {
+        width: 30px;
+        text-align: center;
+        font-size: 1.1rem;
+    }
+    .control-btn {
+        background: rgba(255,255,255,0.05);
+        border: none;
+        color: var(--text-muted);
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: 0.2s;
+    }
+    .control-btn:hover {
+        background: var(--accent-primary);
+        color: #fff;
+    }
+
+    /* Mobile Toggle */
+    @media (max-width: 992px) {
+        .sidebar {
+            width: 280px;
+            transform: translateX(100%);
+            position: fixed;
+            height: 100vh;
+            z-index: 9999;
+        }
+        body[dir="ltr"] .sidebar {
+             transform: translateX(-100%);
+             left: 0; right: auto; border-right: 1px solid var(--border-glass); border-left: none;
+        }
+        .sidebar.active {
+            transform: translateX(0);
+        }
+    }
+</style>
+
+<script>
+    // Active Link Logic
+    document.addEventListener("DOMContentLoaded", function() {
+        var currentPath = window.location.pathname;
+        var links = document.querySelectorAll('.sidebar .nav-link');
+        links.forEach(function(link) {
+            var href = link.getAttribute('href');
+            if(href && (href === currentPath || (currentPath.includes(href) && href !== '/'))) {
+                link.classList.add('active');
+            }
+        });
+    });
+</script>

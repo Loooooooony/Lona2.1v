@@ -1,213 +1,61 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="midnight">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سجلات المراقبة ☢️</title>
+    <title>سجلات المراقبة 📜 | LonaBot</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="/static/mobile-style.css" rel="stylesheet">
+    <link href="/static/css/global.css" rel="stylesheet">
+
+    <style>
+        .main-content {
+            margin-right: var(--sidebar-width);
+            padding: 30px;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @media (max-width: 992px) {
+            .main-content { margin-right: 0; }
+        }
+        
+        .toggle-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        
+        .panel-title {
+            font-weight: 800; margin-bottom: 15px; color: var(--text-main);
+            display: flex; align-items: center; gap: 10px;
+        }
+    </style>
 </head>
 <body>
 
-    {% include 'sidebar.html' %}
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+    {% include 'sidebar_frag.html' %}
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900;"></div>
 
     <div class="main-content">
-<style>
-:root {
-            --bg-dark: #050507;
-            --glass-bg: rgba(20, 20, 23, 0.7);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-            --accent: #ffb7c5;
-            --neon-cyan: #00f3ff;
-            --neon-purple: #bc13fe;
-            --neon-red: #ff4d4d;
-            --text-main: #ffffff;
-            --text-muted: #8a8a93;
-            --sidebar-width: 280px;
-            --sidebar-collapsed-width: 80px;
-        }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Cairo', sans-serif;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(255, 77, 77, 0.05) 0%, transparent 25%),
-                radial-gradient(circle at 90% 80%, rgba(188, 19, 254, 0.05) 0%, transparent 25%);
-            min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-
-        /* --- Sidebar Style --- */
-        .sidebar {
-            width: var(--sidebar-width); height: 100vh;
-            background: rgba(12, 12, 14, 0.95);
-            backdrop-filter: blur(20px);
-            border-left: var(--glass-border);
-            position: fixed; top: 0; right: 0;
-            padding: 20px 15px; z-index: 1000;
-            display: flex; flex-direction: column;
-            overflow-y: auto; overflow-x: hidden;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar::-webkit-scrollbar { width: 5px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
-
-        /* --- Collapsed Mode --- */
-        body.collapsed-mode .sidebar { width: var(--sidebar-collapsed-width); padding: 20px 10px; }
-        body.collapsed-mode .main-content { margin-right: var(--sidebar-collapsed-width); }
-        
-        body.collapsed-mode .brand-text, 
-        body.collapsed-mode .nav-link span,
-        body.collapsed-mode .nav-header,
-        body.collapsed-mode .brand-box small { display: none !important; }
-        
-        body.collapsed-mode .brand-box { padding: 10px 5px; background: transparent; border: none; }
-        body.collapsed-mode .nav-link { justify-content: center; padding: 12px; }
-        body.collapsed-mode .nav-link i { margin: 0; font-size: 1.3rem; }
-        
-        .d-collapsed-block { display: none; }
-        body.collapsed-mode .d-collapsed-block { display: block; margin: 0 auto; }
-
-        .brand-box {
-            padding: 15px; background: linear-gradient(135deg, rgba(255,183,197,0.1), transparent);
-            border-radius: 15px; border: var(--glass-border);
-            text-align: center; margin-bottom: 20px; white-space: nowrap;
-        }
-        .brand-text { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin: 0; }
-
-        .nav-header {
-            font-size: 0.75rem; color: #666; margin: 15px 10px 5px; 
-            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; white-space: nowrap;
-        }
-
-        .nav-link {
-            display: flex; align-items: center; padding: 10px 15px;
-            color: var(--text-muted); text-decoration: none;
-            border-radius: 10px; margin-bottom: 4px; font-size: 0.9rem;
-            font-weight: 600; transition: all 0.2s;
-            border-right: 3px solid transparent; cursor: pointer; white-space: nowrap;
-        }
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main); border-right-color: var(--accent);
-            transform: translateX(-5px);
-        }
-        body.collapsed-mode .nav-link:hover, body.collapsed-mode .nav-link.active { transform: none; background: rgba(255, 255, 255, 0.1); }
-        .nav-link i { width: 25px; font-size: 1rem; text-align: center; margin-left: 10px; }
-        .nav-link.locked { color: var(--neon-red); opacity: 0.8; }
-
-        /* --- Main Content --- */
-        .main-content { margin-right: var(--sidebar-width); padding: 30px; transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        .sidebar-toggler {
-            background: transparent; border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; border-radius: 8px; width: 40px; height: 40px;
-            transition: 0.2s; cursor: pointer; display: none; margin-left: 15px;
-        }
-        .sidebar-toggler:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
-
-        /* --- Logger Specific Styles --- */
-        .glass-panel {
-            background: var(--glass-bg); border: var(--glass-border);
-            border-radius: 20px; padding: 25px; height: 100%;
-            position: relative; overflow: hidden; margin-bottom: 20px;
-        }
-        
-        .panel-title {
-            font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 20px;
-            display: flex; align-items: center; gap: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;
-        }
-        
-        .form-control {
-            background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff; border-radius: 12px; padding: 12px; text-align: center;
-            font-family: monospace; letter-spacing: 1px;
-        }
-        .form-control:focus {
-            background: rgba(0, 0, 0, 0.5); border-color: var(--accent);
-            color: #fff; box-shadow: 0 0 15px rgba(255, 183, 197, 0.1);
-        }
-
-        /* Toggle Rows */
-        .toggle-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 15px; border-radius: 12px; margin-bottom: 8px;
-            background: rgba(255,255,255,0.02); transition: 0.2s;
-            border: 1px solid transparent;
-        }
-        .toggle-row:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.05); }
-        .toggle-label { font-size: 0.9rem; color: #ddd; font-weight: 500; }
-
-        /* Custom Switch */
-        .form-check-input {
-            width: 45px; height: 24px; background-color: #222; border-color: #444; 
-            cursor: pointer; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28255, 255, 255, 0.25%29'/%3e%3c/svg%3e");
-            transition: 0.3s;
-        }
-        .form-check-input:checked { 
-            background-color: var(--accent); border-color: var(--accent);
-            box-shadow: 0 0 10px rgba(255, 183, 197, 0.4);
-        }
-
-        .btn-save {
-            background: linear-gradient(45deg, var(--neon-cyan), #0099ff);
-            color: #000; font-weight: bold; border: none;
-            padding: 15px; border-radius: 15px; width: 100%; font-size: 1.1rem;
-            transition: 0.3s; margin-top: 20px;
-            position: sticky; bottom: 20px; z-index: 100;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        }
-        .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0, 243, 255, 0.3); }
-
-        @media (min-width: 993px) {
-            .sidebar-toggler { display: inline-block; }
-            .mobile-toggler { display: none; }
-        }
-
-        @media (max-width: 992px) {
-            .sidebar { transform: translateX(100%); width: 280px !important; }
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-right: 0 !important; padding: 20px; }
-            
-            body.collapsed-mode .brand-text, 
-            body.collapsed-mode .nav-link span,
-            body.collapsed-mode .nav-header { display: block !important; }
-            body.collapsed-mode .nav-link { justify-content: flex-start; }
-        }
-</style>
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-5">
             <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-dark mobile-toggler me-3 shadow-sm" onclick="toggleMobileSidebar()" style="border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-bars"></i></button>
-                <button class="sidebar-toggler" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-                
+                <button class="lona-btn-primary d-lg-none" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
                 <div>
-                    <h3 class="fw-bold m-0 text-white">سجلات المراقبة <span style="color: var(--neon-cyan);">☢️</span></h3>
-                    <p class="text-muted m-0 small">تفعيل وتعطيل أنظمة المراقبة (Ultimate Logger).</p>
+                    <h3 class="fw-bold m-0" style="color: var(--accent-primary);">LOGGING SYSTEM 📜</h3>
+                    <p class="text-muted m-0 small">Track every event in your server.</p>
                 </div>
             </div>
         </div>
 
-        {% if success %}
-        <div class="alert alert-success d-flex align-items-center gap-2 mb-4" style="background: rgba(25, 135, 84, 0.2); border: 1px solid rgba(25, 135, 84, 0.4); color: #75b798;">
-            <i class="fas fa-check-circle"></i> {{ success }}
-        </div>
-        {% endif %}
-
         <form method="POST" action="/dashboard/{{ guild.id }}/logger_settings">
             
-            <div class="glass-panel text-center mb-4">
-                <label class="d-block mb-2 text-warning fw-bold"><i class="fas fa-hashtag"></i> ID القناة الرئيسية (العمليات)</label>
+            <div class="lona-card mb-4 text-center">
+                <label class="d-block mb-2 fw-bold" style="color: var(--accent-secondary);"><i class="fas fa-hashtag"></i> ID القناة الرئيسية (العمليات)</label>
                 <div style="max-width: 400px; margin: 0 auto;">
-                    <input type="number" name="channel_id" class="form-control" value="{{ config.log_channel_id }}" placeholder="مثلاً: 9876543210..." required>
+                    <input type="number" name="channel_id" class="lona-input text-center" value="{{ config.log_channel_id }}" placeholder="مثلاً: 9876543210..." required>
                 </div>
                 <small class="text-muted mt-2 d-block">سيتم إرسال جميع السجلات إلى هذه القناة.</small>
             </div>
@@ -215,95 +63,95 @@
             <div class="row g-4">
                 
                 <div class="col-lg-4 col-md-6">
-                    <div class="glass-panel">
+                    <div class="lona-card h-100">
                         <div class="panel-title"><i class="fas fa-trash-alt text-danger"></i> الرسائل والحذف</div>
                         <div class="toggle-row">
-                            <span class="toggle-label">حذف رسالة</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="msg_delete" {% if config.events.msg_delete %}checked{% endif %}></div>
+                            <span>حذف رسالة</span>
+                            <input class="lona-toggle" type="checkbox" name="msg_delete" {% if config.events.msg_delete %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">تعديل رسالة</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="msg_edit" {% if config.events.msg_edit %}checked{% endif %}></div>
+                            <span>تعديل رسالة</span>
+                            <input class="lona-toggle" type="checkbox" name="msg_edit" {% if config.events.msg_edit %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">حذف جماعي (Bulk)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="msg_bulk" {% if config.events.msg_bulk %}checked{% endif %}></div>
+                            <span>حذف جماعي (Bulk)</span>
+                            <input class="lona-toggle" type="checkbox" name="msg_bulk" {% if config.events.msg_bulk %}checked{% endif %}>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-4 col-md-6">
-                    <div class="glass-panel">
+                    <div class="lona-card h-100">
                         <div class="panel-title"><i class="fas fa-users text-info"></i> الأعضاء والبروفايل</div>
                         <div class="toggle-row">
-                            <span class="toggle-label">دخول عضو</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="member_join" {% if config.events.member_join %}checked{% endif %}></div>
+                            <span>دخول عضو</span>
+                            <input class="lona-toggle" type="checkbox" name="member_join" {% if config.events.member_join %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">خروج/طرد</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="member_leave" {% if config.events.member_leave %}checked{% endif %}></div>
+                            <span>خروج/طرد</span>
+                            <input class="lona-toggle" type="checkbox" name="member_leave" {% if config.events.member_leave %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">تحديث (رتب/لقب)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="member_update" {% if config.events.member_update %}checked{% endif %}></div>
+                            <span>تحديث (رتب/لقب)</span>
+                            <input class="lona-toggle" type="checkbox" name="member_update" {% if config.events.member_update %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">تحديث (صورة/يوزر)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="user_update" {% if config.events.user_update %}checked{% endif %}></div>
+                            <span>تحديث (صورة/يوزر)</span>
+                            <input class="lona-toggle" type="checkbox" name="user_update" {% if config.events.user_update %}checked{% endif %}>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-4 col-md-6">
-                    <div class="glass-panel">
+                    <div class="lona-card h-100">
                         <div class="panel-title"><i class="fas fa-shield-alt text-warning"></i> الأمان والحظر</div>
                         <div class="toggle-row">
-                            <span class="toggle-label">باند (Ban)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="ban_add" {% if config.events.ban_add %}checked{% endif %}></div>
+                            <span>باند (Ban)</span>
+                            <input class="lona-toggle" type="checkbox" name="ban_add" {% if config.events.ban_add %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">فك باند (Unban)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="ban_remove" {% if config.events.ban_remove %}checked{% endif %}></div>
+                            <span>فك باند (Unban)</span>
+                            <input class="lona-toggle" type="checkbox" name="ban_remove" {% if config.events.ban_remove %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">دعوات (Invites)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="invite_update" {% if config.events.invite_update %}checked{% endif %}></div>
+                            <span>دعوات (Invites)</span>
+                            <input class="lona-toggle" type="checkbox" name="invite_update" {% if config.events.invite_update %}checked{% endif %}>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-lg-6">
-                    <div class="glass-panel">
+                    <div class="lona-card h-100">
                         <div class="panel-title"><i class="fas fa-layer-group text-primary"></i> القنوات والرتب</div>
                         <div class="row">
                             <div class="col-md-6">
-                                <small class="text-muted d-block mb-2">القنوات</small>
+                                <small class="text-muted d-block mb-2 font-weight-bold">القنوات</small>
                                 <div class="toggle-row">
-                                    <span class="toggle-label">إنشاء</span>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="channel_create" {% if config.events.channel_create %}checked{% endif %}></div>
+                                    <span>إنشاء</span>
+                                    <input class="lona-toggle" type="checkbox" name="channel_create" {% if config.events.channel_create %}checked{% endif %}>
                                 </div>
                                 <div class="toggle-row">
-                                    <span class="toggle-label">تعديل</span>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="channel_update" {% if config.events.channel_update %}checked{% endif %}></div>
+                                    <span>تعديل</span>
+                                    <input class="lona-toggle" type="checkbox" name="channel_update" {% if config.events.channel_update %}checked{% endif %}>
                                 </div>
                                 <div class="toggle-row">
-                                    <span class="toggle-label">حذف</span>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="channel_delete" {% if config.events.channel_delete %}checked{% endif %}></div>
+                                    <span>حذف</span>
+                                    <input class="lona-toggle" type="checkbox" name="channel_delete" {% if config.events.channel_delete %}checked{% endif %}>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <small class="text-muted d-block mb-2">الرتب</small>
+                                <small class="text-muted d-block mb-2 font-weight-bold">الرتب</small>
                                 <div class="toggle-row">
-                                    <span class="toggle-label">إنشاء</span>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="role_create" {% if config.events.role_create %}checked{% endif %}></div>
+                                    <span>إنشاء</span>
+                                    <input class="lona-toggle" type="checkbox" name="role_create" {% if config.events.role_create %}checked{% endif %}>
                                 </div>
                                 <div class="toggle-row">
-                                    <span class="toggle-label">تعديل</span>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="role_update" {% if config.events.role_update %}checked{% endif %}></div>
+                                    <span>تعديل</span>
+                                    <input class="lona-toggle" type="checkbox" name="role_update" {% if config.events.role_update %}checked{% endif %}>
                                 </div>
                                 <div class="toggle-row">
-                                    <span class="toggle-label">حذف</span>
-                                    <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="role_delete" {% if config.events.role_delete %}checked{% endif %}></div>
+                                    <span>حذف</span>
+                                    <input class="lona-toggle" type="checkbox" name="role_delete" {% if config.events.role_delete %}checked{% endif %}>
                                 </div>
                             </div>
                         </div>
@@ -311,50 +159,41 @@
                 </div>
 
                 <div class="col-lg-6">
-                    <div class="glass-panel">
+                    <div class="lona-card h-100">
                         <div class="panel-title"><i class="fas fa-server text-success"></i> السيرفر والصوت</div>
                         <div class="toggle-row">
-                            <span class="toggle-label">تحديثات السيرفر</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="server_update" {% if config.events.server_update %}checked{% endif %}></div>
+                            <span>تحديثات السيرفر</span>
+                            <input class="lona-toggle" type="checkbox" name="server_update" {% if config.events.server_update %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">إضافة/حذف ايموجي</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="emoji_update" {% if config.events.emoji_update %}checked{% endif %}></div>
+                            <span>إضافة/حذف ايموجي</span>
+                            <input class="lona-toggle" type="checkbox" name="emoji_update" {% if config.events.emoji_update %}checked{% endif %}>
                         </div>
                         <div class="toggle-row">
-                            <span class="toggle-label">نشاط صوتي (Voice)</span>
-                            <div class="form-check form-switch"><input class="form-check-input" type="checkbox" name="voice_update" {% if config.events.voice_update %}checked{% endif %}></div>
+                            <span>نشاط صوتي (Voice)</span>
+                            <input class="lona-toggle" type="checkbox" name="voice_update" {% if config.events.voice_update %}checked{% endif %}>
                         </div>
                     </div>
                 </div>
 
             </div>
 
-            <button type="submit" class="btn-save shadow-lg">
+            <button type="submit" class="lona-btn-primary w-100 mt-4">
                 <i class="fas fa-save me-2"></i> حفظ وتفعيل النظام
             </button>
         </form>
-    
-<script>
-// دالة الطي
-        function toggleSidebar() {
-            document.body.classList.toggle('collapsed-mode');
-            if(document.body.classList.contains('collapsed-mode')) {
-                localStorage.setItem('sidebarState', 'collapsed');
-            } else {
-                localStorage.setItem('sidebarState', 'expanded');
-            }
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            if(localStorage.getItem('sidebarState') === 'collapsed') {
-                document.body.classList.add('collapsed-mode');
-            }
-        });
-</script>
-</div>
 
+    </div>
+
+    <script src="/static/js/lona-logic.js"></script>
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script src="/static/mobile-script.js"></script>
 </body>
 </html>
