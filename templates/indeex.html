@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LonaBot 🤖 | تحكم بسيرفرك بذكاء وجمال</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Tajawal', 'sans-serif'] },
+                    colors: {
+                        'brand-dark': '#0a0a12',
+                        'brand-blue': '#3b82f6',
+                        'brand-purple': '#8b5cf6',
+                        'brand-pink': '#ec4899'
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #050507; color: white; overflow-x: hidden; }
+
+        /* خلفية ضبابية متحركة */
+        .gradient-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background:
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+        }
+
+        /* تأثير الزجاج */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* النص المتدرج */
+        .text-gradient {
+            background: linear-gradient(to right, #60a5fa, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: gradientMove 5s linear infinite;
+        }
+
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+        /* زر متوهج */
+        .btn-glow {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-glow::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-glow:hover::before { left: 100%; }
+        .btn-glow:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); transform: translateY(-2px); }
+
+        /* سكرول بار */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a12; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="gradient-bg"></div>
+
+    <nav class="fixed w-full z-50 transition-all duration-300 bg-brand-dark/80 backdrop-blur-md border-b border-white/5" id="navbar">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="flex items-center gap-2 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-xl shadow-lg group-hover:scale-110 transition duration-300">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <span class="text-2xl font-black tracking-tight text-white group-hover:text-blue-400 transition">Lona<span class="font-light text-slate-400">Bot</span></span>
+            </a>
+
+            <div class="hidden md:flex gap-8 text-sm font-bold text-slate-300">
+                <a href="#features" class="hover:text-white transition">المميزات</a>
+                <a href="#stats" class="hover:text-white transition">أرقامنا</a>
+                <a href="#faq" class="hover:text-white transition">الأسئلة</a>
+            </div>
+
+            <a href="{{ login_url }}" class="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-full font-bold transition border border-white/10 flex items-center gap-2">
+                <i class="fa-brands fa-discord"></i> دخول الداشبورد
+            </a>
+        </div>
+    </nav>
+
+    <header class="relative min-h-screen flex items-center pt-20 overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+
+        <div class="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10">
+            <div class="text-center lg:text-right space-y-8">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold animate-bounce">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+                    الإصدار الثالث v3.0 متاح الآن! 🚀
+                </div>
+
+                <h1 class="text-5xl lg:text-7xl font-black leading-tight">
+                    حول سيرفرك إلى <br>
+                    <span class="text-gradient">مجتمع احترافي</span>
+                </h1>
+
+                <p class="text-slate-400 text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
+                    لونا بوت ليس مجرد بوت عادي.. هو مديرة أعمال لسيرفرك! 💃🏻 <br>
+                    حماية ذكية، تكتات متطورة، ألعاب تفاعلية، ولوحة تحكم بتصميم خرافي يخليك تسيطر على كل شي بضغطة زر.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                    <a href="{{ login_url }}" class="btn-glow bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-blue-500/25">
+                        <i class="fa-solid fa-plus"></i> أضف البوت الآن
+                    </a>
+                    <a href="#features" class="px-8 py-4 rounded-2xl font-bold text-lg text-slate-300 hover:text-white border border-white/10 hover:bg-white/5 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-play text-slate-500"></i> جولة سريعة
+                    </a>
+                </div>
+            </div>
+
+            <div class="relative lg:h-[600px] flex items-center justify-center animate-float">
+                <div class="glass p-6 rounded-3xl w-full max-w-md transform rotate-[-5deg] hover:rotate-0 transition duration-500 border-t border-white/10">
+                    <div class="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-slate-700 rounded-full"></div>
+                            <div>
+                                <div class="h-3 w-24 bg-slate-700 rounded-full mb-2"></div>
+                                <div class="h-2 w-16 bg-slate-700/50 rounded-full"></div>
+                            </div>
+                        </div>
+                        <div class="flex gap-1">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                            <span class="text-sm text-slate-300">👋 رسالة ترحيب</span>
+                            <i class="fa-solid fa-toggle-on text-green-400 text-xl"></i>
+                        </div>
+                        <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                            <span class="text-sm text-slate-300">🛡️ الحماية من السبام</span>
+                            <i class="fa-solid fa-toggle-on text-blue-400 text-xl"></i>
+                        </div>
+
+                        <div class="h-32 mt-4 bg-gradient-to-t from-blue-500/20 to-transparent rounded-xl flex items-end justify-between p-2 gap-1">
+                            <div class="w-full bg-blue-500/40 rounded-t-sm h-[30%]"></div>
+                            <div class="w-full bg-blue-500/60 rounded-t-sm h-[50%]"></div>
+                            <div class="w-full bg-blue-500/80 rounded-t-sm h-[80%]"></div>
+                            <div class="w-full bg-purple-500 rounded-t-sm h-[60%] animate-pulse"></div>
+                            <div class="w-full bg-blue-500/50 rounded-t-sm h-[40%]"></div>
+                        </div>
+                    </div>
+
+                    <div class="absolute -right-10 top-20 glass p-3 rounded-xl flex items-center gap-3 animate-bounce shadow-xl bg-black/50">
+                        <div class="bg-green-500/20 p-2 rounded-lg text-green-400"><i class="fa-solid fa-check"></i></div>
+                        <div class="text-xs">
+                            <div class="font-bold">تم تفعيل الحماية</div>
+                            <div class="text-slate-400">قبل دقيقة</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="stats" class="py-10 border-y border-white/5 bg-white/2">
+        <div class="container mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div class="space-y-2">
+                <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 counter" data-target="15000">0</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">عضو محمي</div>
+            </div>
+            <div class="space-y-2">
+                <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 counter" data-target="320">0</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">سيرفر يثق بنا</div>
+            </div>
+            <div class="space-y-2">
+                <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 counter" data-target="5000">0</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">تكت تم حله</div>
+            </div>
+            <div class="space-y-2">
+                <div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">24/7</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">وقت التشغيل</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="py-24 relative">
+        <div class="absolute inset-0 bg-brand-blue/5 skew-y-3 transform origin-bottom-right z-0"></div>
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-black mb-4">ليش تختار <span class="text-blue-500">لونا؟</span> 🤔</h2>
+                <p class="text-slate-400 max-w-2xl mx-auto">لأنك تستاهل بوت يفهمك! جمعنا لك كل الأدوات اللي تحتاجها بمكان واحد وبدون تعقيد.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="glass p-8 rounded-3xl hover:-translate-y-2 transition duration-300 group">
+                    <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-2xl text-blue-400 mb-6 group-hover:bg-blue-500 group-hover:text-white transition">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">نظام تكتات متطور</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        اصنع بانل تكتات بأزرار وقوائم منسدلة، مع حفظ تلقائي للمحادثات (Transcript) وصلاحيات مخصصة لكل رتبة.
+                    </p>
+                </div>
+
+                <div class="glass p-8 rounded-3xl hover:-translate-y-2 transition duration-300 group">
+                    <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-2xl text-purple-400 mb-6 group-hover:bg-purple-500 group-hover:text-white transition">
+                        <i class="fa-solid fa-gamepad"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">ألعاب وفعاليات</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        حرك جو السيرفر بألعاب جماعية مثل "عائلتي تربح"، "كود نيمز"، و "روليت الموت" 💀.. الضحك مضمون!
+                    </p>
+                </div>
+
+                <div class="glass p-8 rounded-3xl hover:-translate-y-2 transition duration-300 group">
+                    <div class="w-14 h-14 bg-pink-500/10 rounded-2xl flex items-center justify-center text-2xl text-pink-400 mb-6 group-hover:bg-pink-500 group-hover:text-white transition">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">حماية & لوق (Logs)</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        نام وأنت مرتاح! لونا تحمي سيرفرك من السبام والروابط، وتسجل كل حركة تصير (حذف رسائل، دخول أعضاء، تعديلات).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-purple-900/40 z-0"></div>
+        <div class="container mx-auto px-6 relative z-10 text-center">
+            <h2 class="text-5xl font-black mb-6">جاهز تبدأ الرحلة؟ 🚀</h2>
+            <p class="text-slate-300 text-xl mb-10 max-w-2xl mx-auto">
+                انضم لأكثر من 300 سيرفر يعتمدون على لونا بوت في إدارة مجتمعاتهم. <br>
+                <span class="text-yellow-400 font-bold text-sm mt-2 block">✨ مجاني بالكامل وبدون إعلانات مزعجة!</span>
+            </p>
+            <a href="{{ login_url }}" class="inline-flex items-center gap-3 bg-white text-brand-dark px-10 py-5 rounded-full font-black text-xl hover:scale-105 transition shadow-2xl shadow-white/20">
+                <i class="fa-brands fa-discord text-2xl text-[#5865F2]"></i>
+                أضف لونا لسيرفرك
+            </a>
+        </div>
+    </section>
+
+    <footer class="bg-[#020203] border-t border-white/5 py-12 text-sm">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2 opacity-50 hover:opacity-100 transition">
+                <i class="fa-solid fa-code"></i>
+                <span>تم التطوير بواسطة <strong class="text-white">لونا</strong></span>
+            </div>
+            <div class="flex gap-6 text-slate-400">
+                <a href="#" class="hover:text-white transition">سياسة الخصوصية</a>
+                <a href="#" class="hover:text-white transition">شروط الاستخدام</a>
+                <a href="#" class="hover:text-white transition">الدعم الفني</a>
+            </div>
+            <div class="text-slate-600">
+                &copy; 2026 LonaBot. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const counters = document.querySelectorAll('.counter');
+        const speed = 200;
+
+        const animateCounters = () => {
+            counters.forEach(counter => {
+                const updateCount = () => {
+                    const target = +counter.getAttribute('data-target');
+                    const count = +counter.innerText;
+                    const inc = target / speed;
+
+                    if (count < target) {
+                        counter.innerText = Math.ceil(count + inc);
+                        setTimeout(updateCount, 20);
+                    } else {
+                        counter.innerText = target + (target > 100 ? '+' : '');
+                    }
+                };
+                updateCount();
+            });
+        };
+
+        // تشغيل العداد عند الوصول للقسم
+        let hasAnimated = false;
+        window.addEventListener('scroll', () => {
+            const statsSection = document.getElementById('stats');
+            if (statsSection.getBoundingClientRect().top < window.innerHeight && !hasAnimated) {
+                animateCounters();
+                hasAnimated = true;
+            }
+        });
+    </script>
+</body>
+</html>

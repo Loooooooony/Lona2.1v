@@ -1,108 +1,119 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="midnight">
 <head>
     <meta charset="UTF-8">
-    <title>Lona - اختر السيرفر</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LonaBot Panel | اختر السيرفر</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="/static/css/global.css">
+
     <style>
-        :root {
-            --bg-color: #0f0f13;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --primary: #ff007f;
-            --text: #ffffff;
-        }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text);
-            font-family: 'Cairo', sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .header {
-            margin-top: 50px;
+        .hero-section {
             text-align: center;
+            padding: 80px 20px;
+            position: relative;
         }
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+        .robot-girl {
+            width: 200px;
+            height: auto;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px var(--accent-primary));
         }
-        .header p {
-            opacity: 0.7;
-        }
-        .grid {
+        .server-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-            width: 90%;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
             max-width: 1200px;
-            margin: 50px 0;
+            margin: 0 auto 50px auto;
+            padding: 0 20px;
         }
-        .card {
-            background: var(--card-bg);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            transition: 0.3s;
-            cursor: pointer;
-            text-decoration: none;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            background: rgba(255, 0, 127, 0.1);
-            border-color: var(--primary);
-        }
-        .card img {
+        .server-icon {
             width: 80px;
             height: 80px;
             border-radius: 50%;
+            border: 3px solid var(--accent-secondary);
             margin-bottom: 15px;
-            border: 2px solid var(--primary);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
         }
-        .card h3 {
-            margin: 0;
-            font-size: 1.2rem;
-        }
-        .card span {
-            font-size: 0.9rem;
-            opacity: 0.6;
-            margin-top: 5px;
-        }
-        .login-btn {
-            margin-top: 15px;
-            background: var(--primary);
-            color: white;
-            padding: 8px 20px;
+        .badge-count {
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-top: 5px;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>🤖 Lona Dashboard</h1>
-    <p>اختر السيرفر الذي تريد إدارته</p>
-</div>
+    <!-- Navbar -->
+    <nav class="lona-glass" style="margin: 20px; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 1.5rem; font-weight: 900; color: var(--text-main);">
+            LONA<span style="color: var(--accent-primary);">PANEL</span>
+        </div>
+        <div style="display: flex; gap: 15px;">
+            <button id="theme-toggle-btn" class="lona-btn-primary" style="padding: 8px 12px; border-radius: 50%;">
+                <i id="theme-icon" class="fas fa-sun"></i>
+            </button>
+            <button id="lang-toggle-btn" class="lona-btn-primary" style="padding: 8px 12px; border-radius: 50%;">
+                <i class="fas fa-globe"></i>
+            </button>
+        </div>
+    </nav>
 
-<div class="grid">
-    {% for guild in guilds %}
-    <a href="/login/{{ guild.id }}" class="card">
-        <img src="{{ guild.icon }}" alt="Icon">
-        <h3>{{ guild.name }}</h3>
-        <span><i class="fas fa-users"></i> {{ guild.member_count }} عضو</span>
-        <div class="login-btn">إدارة السيرفر</div>
-    </a>
-    {% endfor %}
-</div>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="lona-float">
+            <img src="https://cdn.discordapp.com/attachments/111111111111/111111111111/robot_girl_placeholder.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/4712/4712035.png'" class="robot-girl" alt="Lona Robot">
+        </div>
+
+        <h1 style="font-size: 3rem; font-weight: 900; margin-bottom: 10px;">
+            <span style="background: linear-gradient(to right, var(--accent-primary), var(--accent-secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;" data-lang-key="select_title">LonaBot Dashboard</span>
+        </h1>
+        <p style="color: var(--text-muted); font-size: 1.2rem; max-width: 600px; margin: 0 auto;" data-lang-key="select_subtitle">
+            تحكم بسيرفرك بذكاء وأناقة. اختر السيرفر للبدء.
+        </p>
+    </div>
+
+    <!-- Server Grid -->
+    <div class="server-grid">
+        {% for guild in guilds %}
+        <div class="lona-card holo-card" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <img src="{{ guild.icon }}" alt="{{ guild.name }}" class="server-icon">
+            <h3 style="margin: 10px 0; font-size: 1.4rem;">{{ guild.name }}</h3>
+            <div class="badge-count"><i class="fas fa-users"></i> {{ guild.member_count }}</div>
+
+            <div style="margin-top: 20px; width: 100%;">
+                <a href="/login/{{ guild.id }}" class="lona-btn-primary" style="width: 100%; justify-content: center;">
+                    <i class="fas fa-rocket"></i> <span data-lang-key="manage_server">إدارة السيرفر</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script src="/static/js/lona-logic.js"></script>
+    <script>
+        // Holographic Effect Script
+        document.querySelectorAll('.holo-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.transform = `perspective(1000px) rotateX(${(y - rect.height/2) / 20}deg) rotateY(${-(x - rect.width/2) / 20}deg)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+            });
+        });
+    </script>
 
 </body>
 </html>

@@ -1,214 +1,53 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="midnight">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>الرد التلقائي 🧠</title>
+    <title>الرد التلقائي 🤖 | LonaBot</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="/static/mobile-style.css" rel="stylesheet">
+    <link href="/static/css/global.css" rel="stylesheet">
+    
+    <style>
+        .main-content {
+            margin-right: var(--sidebar-width);
+            padding: 30px;
+            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @media (max-width: 992px) {
+            .main-content { margin-right: 0; }
+        }
+        
+        .reply-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: 0.2s;
+        }
+        .reply-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--accent-primary);
+        }
+    </style>
 </head>
 <body>
 
-    {% include 'sidebar.html' %}
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
-    
+    {% include 'sidebar_frag.html' %}
+    <div class="sidebar-overlay" onclick="toggleMobileSidebar()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:900;"></div>
+
     <div class="main-content">
-<style>
-:root {
-            --bg-dark: #050507;
-            --glass-bg: rgba(20, 20, 23, 0.7);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-            --accent: #ffb7c5;
-            --neon-cyan: #00f3ff;
-            --neon-purple: #bc13fe;
-            --neon-red: #ff4d4d;
-            --text-main: #ffffff;
-            --text-muted: #8a8a93;
-            --sidebar-width: 280px; /* العرض الأصلي */
-            --sidebar-collapsed-width: 80px; /* العرض بعد الطي */
-        }
 
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Cairo', sans-serif;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 80% 10%, rgba(0, 243, 255, 0.05) 0%, transparent 25%),
-                radial-gradient(circle at 20% 90%, rgba(255, 183, 197, 0.05) 0%, transparent 25%);
-            min-height: 100vh;
-            transition: all 0.3s ease;
-        }
-
-        /* --- Sidebar Styles --- */
-        .sidebar {
-            width: var(--sidebar-width); height: 100vh;
-            background: rgba(12, 12, 14, 0.95);
-            backdrop-filter: blur(20px);
-            border-left: var(--glass-border);
-            position: fixed; top: 0; right: 0;
-            padding: 20px 15px; z-index: 1000;
-            display: flex; flex-direction: column;
-            overflow-y: auto; overflow-x: hidden;
-            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .sidebar::-webkit-scrollbar { width: 5px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
-        
-        /* --- Collapsed Mode Styles --- */
-        body.collapsed-mode .sidebar { width: var(--sidebar-collapsed-width); padding: 20px 10px; }
-        body.collapsed-mode .main-content { margin-right: var(--sidebar-collapsed-width); }
-        
-        /* إخفاء النصوص عند الطي */
-        body.collapsed-mode .brand-text, 
-        body.collapsed-mode .nav-link span,
-        body.collapsed-mode .nav-header,
-        body.collapsed-mode .brand-box small { display: none !important; }
-        
-        body.collapsed-mode .brand-box { padding: 10px 5px; background: transparent; border: none; }
-        body.collapsed-mode .nav-link { justify-content: center; padding: 12px; }
-        body.collapsed-mode .nav-link i { margin: 0; font-size: 1.3rem; }
-
-        /* --- Nav Items --- */
-        .brand-box {
-            padding: 15px; background: linear-gradient(135deg, rgba(255,183,197,0.1), transparent);
-            border-radius: 15px; border: var(--glass-border);
-            text-align: center; margin-bottom: 20px; white-space: nowrap;
-        }
-        .brand-text { font-size: 1.4rem; font-weight: 800; color: var(--accent); margin: 0; }
-
-        .nav-header {
-            font-size: 0.75rem; color: #666; margin: 15px 10px 5px; 
-            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; white-space: nowrap;
-        }
-
-        .nav-link {
-            display: flex; align-items: center; padding: 10px 15px;
-            color: var(--text-muted); text-decoration: none;
-            border-radius: 10px; margin-bottom: 4px; font-size: 0.9rem;
-            font-weight: 600; transition: all 0.2s;
-            border-right: 3px solid transparent; cursor: pointer; white-space: nowrap;
-        }
-        .nav-link:hover, .nav-link.active {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-main); border-right-color: var(--accent);
-            transform: translateX(-5px);
-        }
-        /* تعديل الحركة عند الطي */
-        body.collapsed-mode .nav-link:hover, body.collapsed-mode .nav-link.active { transform: none; background: rgba(255, 255, 255, 0.1); }
-
-        .nav-link i { width: 25px; font-size: 1rem; text-align: center; margin-left: 10px; transition: 0.2s; }
-        .nav-link.locked { color: var(--neon-red); opacity: 0.8; }
-
-        /* --- Main Content --- */
-        .main-content { 
-            margin-right: var(--sidebar-width); 
-            padding: 30px; 
-            transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* --- Glass Panels --- */
-        .glass-panel {
-            background: var(--glass-bg); border: var(--glass-border);
-            border-radius: 20px; padding: 25px; height: 100%;
-            position: relative; overflow: hidden;
-        }
-
-        .form-control {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff; border-radius: 12px; padding: 12px;
-        }
-        .form-control:focus {
-            background: rgba(0, 0, 0, 0.5);
-            border-color: var(--accent);
-            color: #fff; box-shadow: 0 0 15px rgba(255, 183, 197, 0.1);
-        }
-        label { margin-bottom: 8px; font-size: 0.9rem; color: var(--text-muted); font-weight: 600; }
-
-        .btn-add {
-            background: linear-gradient(45deg, var(--accent), #ff8fa3);
-            color: #000; border: none; font-weight: 800;
-            padding: 12px; border-radius: 12px; width: 100%;
-            transition: 0.3s; margin-top: 15px;
-        }
-        .btn-add:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(255, 183, 197, 0.3); }
-
-        /* Reply Items */
-        .reply-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 15px; margin-bottom: 12px;
-            display: flex; justify-content: space-between; align-items: center;
-            transition: 0.3s;
-        }
-        .reply-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: var(--neon-cyan);
-            transform: translateX(-5px);
-        }
-        
-        .trigger-word { color: var(--accent); font-weight: bold; font-size: 1.1rem; margin-bottom: 4px; }
-        .response-word { color: #ccc; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
-        
-        .btn-del {
-            width: 35px; height: 35px; border-radius: 10px;
-            background: rgba(255, 77, 77, 0.1); color: var(--neon-red);
-            border: 1px solid rgba(255, 77, 77, 0.2);
-            display: flex; align-items: center; justify-content: center;
-            transition: 0.3s;
-        }
-        .btn-del:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 10px var(--neon-red); }
-
-        .empty-state {
-            text-align: center; padding: 40px; color: var(--text-muted);
-            border: 2px dashed rgba(255,255,255,0.1); border-radius: 20px;
-        }
-
-        /* Toggle Button */
-        .sidebar-toggler {
-            background: transparent; border: 1px solid rgba(255,255,255,0.2);
-            color: #fff; border-radius: 8px; width: 40px; height: 40px;
-            transition: 0.2s; cursor: pointer; display: none; /* مخفي بالموبايل */
-        }
-        .sidebar-toggler:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
-
-        /* Mobile Adjustments */
-        @media (min-width: 993px) {
-            .sidebar-toggler { display: inline-block; }
-            .mobile-toggler { display: none; }
-        }
-
-        @media (max-width: 992px) {
-            .sidebar { transform: translateX(100%); width: 280px !important; } /* بالموبايل يرجع للحجم الطبيعي */
-            .sidebar.active { transform: translateX(0); }
-            .main-content { margin-right: 0 !important; padding: 20px; }
-            
-            /* إلغاء تأثير الـ collapse بالموبايل */
-            body.collapsed-mode .brand-text, 
-            body.collapsed-mode .nav-link span,
-            body.collapsed-mode .nav-header { display: block !important; }
-            body.collapsed-mode .nav-link { justify-content: flex-start; }
-        }
-</style>
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-5">
             <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-dark mobile-toggler me-3 shadow-sm" onclick="toggleMobileSidebar()" style="border: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-bars"></i></button>
-                
-                <button class="sidebar-toggler" onclick="toggleSidebar()" title="طي/توسيع القائمة">
-                    <i class="fas fa-bars"></i>
-                </button>
-
+                <button class="lona-btn-primary d-lg-none" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
                 <div>
-                    <h3 class="fw-bold m-0 text-white">دماغ لونا <span style="color: var(--accent);">🧠</span></h3>
-                    <p class="text-muted m-0 small">علميها الكلام، وهي ترد بلسانك الحلو.</p>
+                    <h3 class="fw-bold m-0" style="color: var(--accent-primary);">AUTO REPLY 🤖</h3>
+                    <p class="text-muted m-0 small">Make your bot smart.</p>
                 </div>
             </div>
         </div>
@@ -216,95 +55,78 @@
         <div class="row g-4">
             
             <div class="col-lg-4">
-                <div class="glass-panel sticky-top" style="top: 20px; z-index: 1;">
-                    <h5 class="fw-bold mb-4" style="color: var(--neon-cyan);"><i class="fas fa-plus-circle"></i> تعليم رد جديد</h5>
-                    
+                <div class="lona-card h-100">
+                    <h5 class="fw-bold mb-4">إضافة رد جديد</h5>
                     <form method="POST" action="/dashboard/{{ guild.id }}/auto_reply">
-                        <input type="hidden" name="add_trigger" value="1">
-                        
                         <div class="mb-3">
-                            <label><i class="fas fa-comment"></i> اذا شخص قال:</label>
-                            <input type="text" name="trigger" class="form-control" placeholder="مثلاً: هلو، شلونج..." required>
+                            <label class="small text-muted mb-1">الكلمة المفتاحية</label>
+                            <input type="text" name="trigger" class="lona-input" placeholder="مثلاً: السلام عليكم" required>
                         </div>
-
-                        <div class="mb-3">
-                            <label><i class="fas fa-reply fa-flip-horizontal"></i> لونا ترد:</label>
-                            <textarea name="response" class="form-control" rows="4" placeholder="هلا وغلا! نورت السيرفر 🌸" required></textarea>
+                        <div class="mb-4">
+                            <label class="small text-muted mb-1">الرد</label>
+                            <textarea name="response" class="lona-input" rows="4" placeholder="وعليكم السلام يا هلا!" required></textarea>
                         </div>
-
-                        <button type="submit" class="btn-add">
-                            <i class="fas fa-save me-2"></i> حفظ في الذاكرة
+                        <button type="submit" name="add_trigger" value="1" class="lona-btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i> إضافة
                         </button>
                     </form>
                 </div>
             </div>
 
             <div class="col-lg-8">
-                <div class="glass-panel">
-                    <h5 class="fw-bold mb-4 d-flex justify-content-between">
-                        <span><i class="fas fa-memory"></i> الذاكرة المحفوظة</span>
-                        <span class="badge bg-secondary rounded-pill">{{ replies|length }}</span>
-                    </h5>
+                <div class="lona-card h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold m-0">الردود الحالية ({{ replies|length }})</h5>
+                        <input type="text" id="search" class="lona-input" style="width: 200px; padding: 5px 10px;" placeholder="بحث...">
+                    </div>
 
-                    {% if replies %}
-                        <div class="row">
+                    <div style="max-height: 500px; overflow-y: auto;" id="replies-list">
+                        {% if replies %}
                             {% for trigger, response in replies.items() %}
-                            <div class="col-12">
-                                <div class="reply-item">
-                                    <div>
-                                        <div class="trigger-word">"{{ trigger }}"</div>
-                                        <div class="response-word">
-                                            <i class="fas fa-level-down-alt fa-rotate-90 text-muted"></i> {{ response }}
-                                        </div>
-                                    </div>
-                                    <form method="POST" class="m-0" action="/dashboard/{{ guild.id }}/auto_reply">
-                                        <input type="hidden" name="delete_trigger" value="{{ trigger }}">
-                                        <button class="btn-del" onclick="return confirm('هل أنت متأكد من مسح هذا الرد؟')">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </form>
+                            <div class="reply-card">
+                                <div>
+                                    <div class="fw-bold text-info mb-1">{{ trigger }}</div>
+                                    <div class="text-muted small text-truncate" style="max-width: 400px;">{{ response }}</div>
                                 </div>
+                                <form method="POST" action="/dashboard/{{ guild.id }}/auto_reply" class="m-0">
+                                    <input type="hidden" name="delete_trigger" value="{{ trigger }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                             {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <i class="fas fa-wind fa-3x mb-3" style="opacity: 0.5;"></i>
-                            <h5>الذاكرة فارغة!</h5>
-                            <p class="small">ماكو ردود محفوظة، ضيفي اول رد من القائمة الجانبية.</p>
-                        </div>
-                    {% endif %}
-
+                        {% else %}
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-robot fa-3x mb-3 opacity-25"></i>
+                                <p>لا توجد ردود تلقائية.</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
         </div>
-    
-<script>
-// دالة الطي والحفظ في الذاكرة
-        function toggleSidebar() {
-            document.body.classList.toggle('collapsed-mode');
-            
-            // نحفظ حالة المستخدم
-            if(document.body.classList.contains('collapsed-mode')) {
-                localStorage.setItem('sidebarState', 'collapsed');
-            } else {
-                localStorage.setItem('sidebarState', 'expanded');
-            }
+
+    </div>
+
+    <script src="/static/js/lona-logic.js"></script>
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            sidebar.classList.toggle('active');
+            overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
         }
 
-        // استرجاع الحالة عند تحميل الصفحة
-        document.addEventListener('DOMContentLoaded', () => {
-            var state = localStorage.getItem('sidebarState');
-            if(state === 'collapsed') {
-                document.body.classList.add('collapsed-mode');
-            }
+        document.getElementById('search').addEventListener('keyup', function() {
+            var val = this.value.toLowerCase();
+            document.querySelectorAll('.reply-card').forEach(card => {
+                var text = card.innerText.toLowerCase();
+                card.style.display = text.includes(val) ? 'flex' : 'none';
+            });
         });
-</script>
-</div>
-
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script src="/static/mobile-script.js"></script>
 </body>
 </html>
